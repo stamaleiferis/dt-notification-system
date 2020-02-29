@@ -2,6 +2,7 @@
 Express app, hooked up to a mongo database that is deployed on EC2 instance with DNS --> `http://ec2-3-94-208-166.compute-1.amazonaws.com:3000`
 * The server will return json response. It is not hooked up to a view engine.
 * The instance will need to define environment variables to establish database connection (The EC2 instance above should have variables defined already)
+
 **APIS**
 
 __Test Router__
