@@ -10,4 +10,9 @@ router.get('/testConnection', function(req, res, next) {
   res.json({'message':'connection is working!'});
 });
 
+router.post('/testPost', function(req, res, next) {
+  const param1 = req.body.param1;
+  res.json({'param':param1});
+});
+
 module.exports = router;
