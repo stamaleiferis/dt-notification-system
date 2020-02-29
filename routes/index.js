@@ -7,6 +7,7 @@ router.get('/', function(req, res, next) {
 });
 
 router.get('/testConnection', function(req, res, next) {
+  console.log("server says: hit the test connection route");
   res.send('connection is working!');
 });
 
