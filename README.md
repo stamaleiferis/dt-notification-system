@@ -3,9 +3,9 @@ Express app, hooked up to a mongo database that is deployed on EC2 instance with
 * The server will return json response. It is not hooked up to a view engine.
 * The instance will need to define environment variables to establish database connection (The EC2 instance above should have variables defined already)
 
-**APIS**
+**APIs**
 
-__Test Router__
+_Test Router_
 1. /testConnection (tests whether erver is up)
 GET
 Response sample
