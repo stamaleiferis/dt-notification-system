@@ -18,35 +18,42 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const MongoClient = require('mongodb').MongoClient;
 const uri = `mongodb://${process.env.DBUSER}:${process.env.DBPASSWORD}@${process.env.DBHOST}/${process.env.DB}`;
-const client = new MongoClient(uri, { useNewUrlParser: true });
-client.connect(err => {
-  const db = client.db(process.env.DB);
+const client = new MongoClient(uri);
 
-  app.use('/', indexRouter);
+async function main() {
+  try {
+    await client.connect();
+    const db = client.db(process.env.DB);
 
-  // test Router for testing health, database connection, and post
-  app.use('/', (req, res, next) => {
-    req.db = db;
-    next();
-  }, testRouter);
+    app.use('/', indexRouter);
 
-  // catch 404 and forward to error handler
-  app.use(function(req, res, next) {
-    next(createError(404));
-  });
+    // test Router for testing health, database connection, and post
+    app.use('/', (req, res, next) => {
+      req.db = db;
+      next();
+    }, testRouter);
 
-  // error handler
-  app.use(function(err, req, res, next) {
-    // set locals, only providing error in development
-    res.locals.message = err.message;
-    res.locals.error = req.app.get('env') === 'development' ? err : {};
+    // catch 404 and forward to error handler
+    app.use(function(req, res, next) {
+      next(createError(404));
+    });
 
-    // render the error page
-    res.status(err.status || 500);
-    res.json({error : err});
-  });
-});
+    // error handler
+    app.use(function(err, req, res, next) {
+      // set locals, only providing error in development
+      res.locals.message = err.message;
+      res.locals.error = req.app.get('env') === 'development' ? err : {};
 
-client.close();
+      // render the error page
+      res.status(err.status || 500);
+      res.json({error : err});
+    });
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+main().catch(console.err);
+
 
 module.exports = app;
