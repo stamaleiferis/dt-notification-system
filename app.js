@@ -6,6 +6,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var testRouter = require('./routes/test');
+var cameraRouter = require('./routes/camera');
 require('dotenv').config();
 
 var app = express();
@@ -26,9 +27,10 @@ async function main() {
     const db = client.db(process.env.DB);
 
     app.use('/', indexRouter);
+    app.use('/camera/', cameraRouter);
 
     // test Router for testing health, database connection, and post
-    app.use('/', (req, res, next) => {
+    app.use('/test/', (req, res, next) => {
       req.db = db;
       next();
     }, testRouter);
