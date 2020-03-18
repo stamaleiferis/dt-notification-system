@@ -6,6 +6,7 @@ var logger = require('morgan');
 
 var indexRouter = require('./routes/index');
 var testRouter = require('./routes/test');
+var usersRouter = require('./routes/users');
 require('dotenv').config();
 
 var app = express();
@@ -28,10 +29,15 @@ async function main() {
     app.use('/', indexRouter);
 
     // test Router for testing health, database connection, and post
-    app.use('/', (req, res, next) => {
+    app.use('/test/', (req, res, next) => {
       req.db = db;
       next();
     }, testRouter);
+
+    app.use('/users/', (req, res, next) => {
+      req.db = db;
+      next();
+    }, usersRouter);
 
     // catch 404 and forward to error handler
     app.use(function(req, res, next) {
