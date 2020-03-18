@@ -4,6 +4,11 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
+// passport for authentication by local strategy
+var passport = require("passport");
+var LocalStrategy = require("passport-local").Strategy;
+var JWTStrategy = require("passport-jwt").Strategy;
+
 var indexRouter = require('./routes/index');
 var testRouter = require('./routes/test');
 var usersRouter = require('./routes/users');
@@ -21,10 +26,53 @@ const MongoClient = require('mongodb').MongoClient;
 const uri = `mongodb://${process.env.DBUSER}:${process.env.DBPASSWORD}@${process.env.DBHOST}/${process.env.DB}`;
 const client = new MongoClient(uri);
 
+const JWT_SECRET = process.env.JWT_SECRET || 'secret_sauce';
+
 async function main() {
   try {
     await client.connect();
     const db = client.db(process.env.DB);
+
+    /*
+    Passport Authentication using local strategy
+    TODO: mongo collection 'users' must be set up with
+      - email
+      - passwordHash (hashed password that is stored)
+    */
+   // AUTHENTICATION USING JWT AND PASSPORT FOR MENTEE
+    // Local Strategy for email/username verification
+    passport.use(new LocalStrategy({
+        usernameField: 'email',
+        passwordField: 'password',
+    }, async (email, password, done) => {
+        try {
+            const user = await db.collection('users').findOne({'email': email});
+            if (!user) {
+                return done('User not found');
+            }
+            const passwordsMatch = await bcrypt.compare(password, user.passwordHash);
+            if (passwordsMatch) {
+                return done(null, user);
+            } else {
+                return done('Incorrect Password!');
+            }
+        } catch (error) {
+            done(error);
+        }
+    }));
+    // JWT strategy to check jwt token from cookies
+    passport.use(new JWTStrategy({
+        jwtFromRequest: req => req.cookies.jwt,
+        // must be protected secret
+        secretOrKey: JWT_SECRET,
+      },
+      (jwtPayload, done) => {
+        if (Date.now() > jwtPayload.expires) {
+          return done('jwt expired');
+        }
+        return done(null, jwtPayload);
+      }
+    ));
 
     app.use('/', indexRouter);
 
