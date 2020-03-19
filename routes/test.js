@@ -11,22 +11,24 @@ router.post('/testPost', function(req, res, next) {
 });
 
 router.get('/getTestData', async (req, res, next) => {
-    const dbData = await req.db.collection("testCollection").find().toArray();
+    const dbData = await req.db.collection("Student").find().toArray();
     res.json({'testData' : dbData});
 });
 
-router.get('/addData/:name/:profession', async (req, res, next) => {
+router.get('/addData/:name/:email/:grade/:phone', async (req, res, next) => {
+    const email = req.params.email;
     const name = req.params.name;
-    const profession = req.params.profession;
-    await req.db.collection("testCollection").insert({
-        name, profession
+    const grade = req.params.grade;
+    const phone = req.params.phone;
+    await req.db.collection("Student").insert({
+        name, email, grade, phone
     });
-    const dbData = await req.db.collection("testCollection").find().toArray();
+    const dbData = await req.db.collection("Student").find().toArray();
     res.json({'response' : dbData});
 });
 
 router.get('/data/clear', async (req, res, next) => {
-    await req.db.collection("testCollection").remove({});
+    await req.db.collection("Student").remove({});
     res.json({'message' : 'deleted all records!'});
 });
   
