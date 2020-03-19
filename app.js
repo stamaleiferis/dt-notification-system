@@ -27,6 +27,7 @@ const uri = `mongodb://${process.env.DBUSER}:${process.env.DBPASSWORD}@${process
 const client = new MongoClient(uri);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_sauce';
+const JWT_EXPIRATION_MS = process.env.JWT_EXPIRATION_MS || '25000000'; // > 6 hrs;
 
 async function main() {
   try {
@@ -46,7 +47,7 @@ async function main() {
         passwordField: 'password',
     }, async (email, password, done) => {
         try {
-            const user = await db.collection('users').findOne({'email': email});
+            const user = await db.collection('User').findOne({'email': email});
             if (!user) {
                 return done('User not found');
             }

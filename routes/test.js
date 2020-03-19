@@ -15,6 +15,11 @@ router.get('/getTestData', async (req, res, next) => {
     res.json({'testData' : dbData});
 });
 
+router.get('/getStudent/:email', async (req, res, next) => {
+    const dbData = await req.db.collection("Student").findOne({email: req.params.email})
+    res.json({'student' : dbData});
+});
+
 router.get('/addData/:name/:email/:grade/:phone', async (req, res, next) => {
     const email = req.params.email;
     const name = req.params.name;
