@@ -11,7 +11,7 @@ var JWTStrategy = require("passport-jwt").Strategy;
 
 var indexRouter = require('./routes/index');
 var testRouter = require('./routes/test');
-var usersRouter = require('./routes/users');
+var studentsRouter = require('./routes/students');
 require('dotenv').config();
 
 var app = express();
@@ -82,10 +82,10 @@ async function main() {
       next();
     }, testRouter);
 
-    app.use('/users/', (req, res, next) => {
+    app.use('/students/', (req, res, next) => {
       req.db = db;
       next();
-    }, usersRouter);
+    }, studentsRouter);
 
     // catch 404 and forward to error handler
     app.use(function(req, res, next) {
