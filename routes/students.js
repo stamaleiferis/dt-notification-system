@@ -2,6 +2,8 @@ var express = require('express');
 var router = express.Router();
 var crypto = require('crypto-random-string');
 var bcrypt = require('bcrypt');
+var checkRole = require('../utils/handlers').checkRole;
+var passport = require("passport");
 
 const HASH_COST = 10;
 
@@ -10,6 +12,7 @@ router.post('/add', async (req, res) => {
     const name = req.body.name;
     const grade = req.body.grade;
     const phone = req.body.phone;
+    const role = "STUDENT";
     // TODO: for email-based verification
     const verificationToken = crypto({length: 16});
     const passwordHash = await bcrypt.hash(req.body.password, HASH_COST);
@@ -18,7 +21,7 @@ router.post('/add', async (req, res) => {
             name, email, grade, phone, passwordHash, verificationToken
         });
         await req.db.collection("User").insert({
-            email, passwordHash
+            email, passwordHash, role
         });
         res.json({
             message: 'Successfully added student',
@@ -30,5 +33,10 @@ router.post('/add', async (req, res) => {
         });
     }
 });
-  
+
+// TODO: for testing checkRole handler
+router.get('/onlyStudent', checkRole("STUDENT"), passport.authenticate('jwt', {session: false}), (req, res, next) => {
+    res.status(200).send("You now have secret knowledge!");
+});
+
 module.exports = router;

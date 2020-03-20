@@ -30,7 +30,7 @@ router.post('/login', (req, res, next) => {
           }
           const cookie = jwt.sign(JSON.stringify(payload), JWT_SECRET);
           // set jwt-signed cookie on response
-          res.cookie('jwt', cookie)
+          res.cookie('jwt', cookie);
           res.status(200).send({ user });
         });
       }
