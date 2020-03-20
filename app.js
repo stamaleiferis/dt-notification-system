@@ -2,7 +2,9 @@ var createError = require('http-errors');
 var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 var logger = require('morgan');
+var bcrypt = require('bcrypt');
 
 // passport for authentication by local strategy
 var passport = require("passport");
@@ -20,6 +22,7 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 const MongoClient = require('mongodb').MongoClient;
@@ -27,7 +30,6 @@ const uri = `mongodb://${process.env.DBUSER}:${process.env.DBPASSWORD}@${process
 const client = new MongoClient(uri);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_sauce';
-const JWT_EXPIRATION_MS = process.env.JWT_EXPIRATION_MS || '25000000'; // > 6 hrs;
 
 async function main() {
   try {
