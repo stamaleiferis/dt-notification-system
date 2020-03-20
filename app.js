@@ -7,6 +7,7 @@ var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var testRouter = require('./routes/test');
 var usersRouter = require('./routes/users');
+var staffRouter = require('./routes/staff');
 require('dotenv').config();
 
 var app = express();
@@ -38,6 +39,11 @@ async function main() {
       req.db = db;
       next();
     }, usersRouter);
+
+    app.use('/staff/', (req, res, next) => {
+      req.db = db;
+      next();
+    }, staffRouter);
 
     // catch 404 and forward to error handler
     app.use(function(req, res, next) {
