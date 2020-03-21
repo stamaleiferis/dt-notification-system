@@ -13,12 +13,10 @@ router.post('/add', async (req, res) => {
     const phone = req.body.phone;
     const emailVerified = false;
     const approved = false;
-    // TODO: for email-based verification
     const verificationToken = crypto({length: 16});
-    //console.log(role,phone,email)
     const passwordHash = await bcrypt.hash(req.body.password, HASH_COST);
-    //let passwordHash = "passwordHash"
     try {
+        //TODO: check if email is already in database
         const staffAdded = await req.db.collection("Staff").insert({
             name, email, phone, emailVerified, approved
         });
@@ -46,7 +44,15 @@ router.post('/add', async (req, res) => {
 router.get('/:email/:verificationToken', async (req,res)=>{
   const email = req.params.email
   const verificationToken = req.params.verificationToken
-
+  const dbData = await req.db.collection("User").find({email: email}).project({verificationToken:1,_id:0}).toArray();
+  //TODO: assert len(storedVerification)==1
+  console.log(dbData)
+  if (dbData[0]['verificationToken'] == verificationToken){
+    verificationResult = await req.db.collection("Staff").findAndModify({email: email},{cno:1},{emailVerified: true})
+    console.log('Verification token matches')
+    console.log(dbData)
+  }
+  res.send()
 });
 
 router.post('/sendEmail', async (req, res) => {
