@@ -3,6 +3,7 @@ var router = express.Router();
 var crypto = require('crypto-random-string');
 var bcrypt = require('bcrypt');
 var sendVerificationEmail = require('./helpers/emailHelpers').sendVerificationEmail
+var sendEmail = require('./helpers/emailHelpers').sendEmail
 
 const HASH_COST = 10;
 
@@ -27,15 +28,15 @@ router.post('/add', async (req, res) => {
             message: 'Successfully added '+ role,
             staff: staffAdded
         });
-
-        await sendVerificationEmail(email, verificationToken);
+        console.log('Added to DB')
+        //await sendVerificationEmail(email, verificationToken);
+        await sendEmail(email,'noreply@school.edu','Verify Your Email','Email Body','html')
         console.log("Sent email")
     } catch (e) {
         console.log("Error: "+e)
         res.json({
             message: 'Failed adding' + role
         });
-
     }
     res.send()
 
@@ -46,41 +47,37 @@ router.get('/:email/:verificationToken', async (req,res)=>{
   const verificationToken = req.params.verificationToken
   const dbData = await req.db.collection("User").find({email: email}).project({verificationToken:1,_id:0}).toArray();
   //TODO: assert len(storedVerification)==1
-  console.log(dbData)
+
   if (dbData[0]['verificationToken'] == verificationToken){
     verificationResult = await req.db.collection("Staff").findAndModify({email: email},{cno:1},{emailVerified: true})
     console.log('Verification token matches')
-    console.log(dbData)
+
   }
   res.send()
 });
 
-router.post('/sendEmail', async (req, res) => {
-    const email = req.body.email; //Get current email
+router.post('/sendMessages', async (req, res) => {
+    const email = req.body.email; //TODO: prob don't need this, replace with context
     const grades = req.body.grades;
     const subject = req.body.subject;
     const body = req.body.body;
 
-
-
-    // TODO: for email-based verification
-    //const verificationToken = crypto({length: 16});
-    //const passwordHash = await bcrypt.hash(req.body.password, HASH_COST);
+    //TODO: body and html
     try {
-        const dbData = await req.db.collection("Student").find({grade: grades}).project({email:1}).toArray();
+        const dbData = await req.db.collection("Student").find({grade: grades}).project({email:1, _id:0}).toArray();
+        emails = dbData.map(m => m.email)
+        await sendEmail(emails,email,subject,body,'TODO');
         res.json({
           message:'Success'
         })
-        console.log(dbData)
+
     } catch (e) {
-      console.log(e)
+
         res.json({
             message: 'Failed'
         });
     }
     res.send()
-    //TODO: send email to address in dbData[i]["email"]
-
 });
 
 module.exports = router;
