@@ -28,12 +28,9 @@ router.post('/add', async (req, res) => {
             message: 'Successfully added '+ role,
             staff: staffAdded
         });
-        console.log('Added to DB')
         //await sendVerificationEmail(email, verificationToken);
         await sendEmail(email,'noreply@school.edu','Verify Your Email','Email Body','html')
-        console.log("Sent email")
     } catch (e) {
-        console.log("Error: "+e)
         res.json({
             message: 'Failed adding' + role
         });
@@ -50,7 +47,6 @@ router.get('/:email/:verificationToken', async (req,res)=>{
 
   if (dbData[0]['verificationToken'] == verificationToken){
     verificationResult = await req.db.collection("Staff").findAndModify({email: email},{cno:1},{emailVerified: true})
-    console.log('Verification token matches')
 
   }
   res.send()
