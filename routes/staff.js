@@ -80,4 +80,24 @@ router.post('/sendMessages', async (req, res) => {
     res.send()
 });
 
+router.post('/sendMessage', async (req, res) => {
+  email = req.body.emails
+  subject = req.body.subject
+  msg = req.body.msg
+  from = 'TODO@todo.todo'
+
+  try{
+    await sendEmail(email,from,subject,msg,'TODO');
+    res.json({
+      message:'Success'
+    })
+  }catch(e){
+    res.json({
+      message:'Failure'
+    })
+  }
+
+
+)};
+
 module.exports = router;
