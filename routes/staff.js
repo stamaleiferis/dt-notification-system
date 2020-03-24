@@ -27,7 +27,7 @@ router.post('/add', async (req, res) => {
             message: 'Successfully added '+ role,
             staff: staffAdded
         });
-        await sendEmail(email,'noreply@school.edu','Verify Your Staff Email','Email Body','html')
+        await sendEmail(email,'noreply@school.edu','Verify Your Staff Email','Email Body',verificationToken)
     } catch (e) {
         res.json({
             message: 'Failed adding' + role
@@ -37,29 +37,36 @@ router.post('/add', async (req, res) => {
 
 });
 
-router.get('/:email/:verificationToken', async (req,res)=>{
+router.get('verification/:email/:verificationToken', async (req,res)=>{
   const email = req.params.email
   const verificationToken = req.params.verificationToken
   const dbData = await req.db.collection("User").find({email: email}).project({verificationToken:1,_id:0}).toArray();
-  //TODO: assert len(storedVerification)==1
-
+  let success = false
+  //TODO: assert dbData.length == 1
   if (dbData[0]['verificationToken'] == verificationToken){
-    verificationResult = await req.db.collection("Staff").findAndModify({email: email},{cno:1},{emailVerified: true})
+    try{
+      verificationResult = await req.db.collection("Staff").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
+      success = true
+    }catch(e){
 
+    }
   }
+  res.json({
+    Success:success
+  });
   res.send()
 });
 
 router.post('/sendMessages', async (req, res) => {
-    const email = req.body.email; //TODO: prob don't need this, replace with context
     const grades = req.body.grades;
     const subject = req.body.subject;
     const body = req.body.body;
+    const email_from = "noreply@school.edu"
 
     //TODO: body and html
     try {
         const dbData = await req.db.collection("Student").find({grade: grades}).project({email:1, _id:0}).toArray();
-        await sendEmail(dbData,email,subject,body,'TODO');
+        await sendEmail(dbData,email_from,subject,body,'TODO');
         res.json({
           message:'Success'
         })
@@ -140,10 +147,12 @@ router.get('/students', async (req,res)=>{
 router.get('/staff', async (req,res)=>{
 
   try {
-      const dbData = await req.db.collection("Staff").find().toArray();
+      const dbDataStaff = await req.db.collection("Staff").find().toArray();
+      const dbDataUser = await req.db.collection("User").find().toArray();
       res.json({
           message: 'Successfully got staff records',
-          students: dbData
+          staff: dbDataStaff,
+          user: dbDataUser
       });
   }catch(e){
     res.json({
@@ -151,6 +160,51 @@ router.get('/staff', async (req,res)=>{
     });
   }
   res.send()
+});
+
+router.get('/get/:email', async (req,res)=>{
+  const email = req.params.email
+  try {
+      const staffData = await req.db.collection("Staff").find({email: email}).toArray();
+      const userData = await req.db.collection("User").find({email: email}).toArray();
+      const role = userData.role
+      let message = ''
+      if (!staffData.length  || !userData.length){
+        message = "Record doesn't exist"
+      }else{
+        message = "Successfully got staff details"
+      }
+      res.json({
+          message: message,
+          staff: staffData,
+          user: userData
+      });
+  }catch(e){
+    res.json({
+        message: 'Database read error'
+    });
+  }
+  res.send()
+});
+
+router.get('/status/:email', async (req,res)=>{
+  const email = req.params.email
+  try {
+      const staffData = await req.db.collection("Staff").find({email: email}).project({emailVerified:1,approved:1,_id:0}).toArray();
+      if (staffData.length ){
+      res.json({
+          message: "Successfully got status",
+          emailVerified: staffData[0].emailVerified,
+          approved: staffData[0].approved
+        });
+      res.send()
+      }
+  }catch(e){
+    res.json({
+        message: "Error",
+      });
+    res.send()
+  }
 });
 
 module.exports = router;
