@@ -33,13 +33,30 @@ router.get('/addData/:name/:email/:grade/:phone', async (req, res, next) => {
 });
 
 router.get('/data/clear', async (req, res, next) => {
+    await req.db.collection("Staff").remove({});
     await req.db.collection("Student").remove({});
+    await req.db.collection("User").remove({});
     res.json({'message' : 'deleted all records!'});
+});
+
+router.get('/data/clear/staff', async (req, res, next) => {
+    await req.db.collection("Staff").remove({});
+    res.json({'message' : 'deleted all staff records!'});
+});
+
+router.get('/data/clear/student', async (req, res, next) => {
+    await req.db.collection("Student").remove({});
+    res.json({'message' : 'deleted all student records!'});
+});
+
+router.get('/data/clear/user', async (req, res, next) => {
+    await req.db.collection("User").remove({});
+    res.json({'message' : 'deleted all user records!'});
 });
 
 router.get('/dataTest', async (req, res, next) => {
     //// TODO:
-    
+
 });
 
 module.exports = router;
