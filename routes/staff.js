@@ -120,4 +120,37 @@ router.post('/invite/students', async (req,res)=>{
   res.send()
 });
 
+//TODO: add route students/:grade to get all students of specific grade
+router.get('/students', async (req,res)=>{
+
+  try {
+      const dbData = await req.db.collection("Student").find().toArray();
+      res.json({
+          message: 'Successfully got student records',
+          students: dbData
+      });
+  }catch(e){
+    res.json({
+        message: 'Failed to get student records'
+    });
+  }
+  res.send()
+});
+
+router.get('/staff', async (req,res)=>{
+
+  try {
+      const dbData = await req.db.collection("Staff").find().toArray();
+      res.json({
+          message: 'Successfully got staff records',
+          students: dbData
+      });
+  }catch(e){
+    res.json({
+        message: 'Failed to get staff records'
+    });
+  }
+  res.send()
+});
+
 module.exports = router;
