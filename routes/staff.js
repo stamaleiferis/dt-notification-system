@@ -2,7 +2,6 @@ var express = require('express');
 var router = express.Router();
 var crypto = require('crypto-random-string');
 var bcrypt = require('bcrypt');
-var sendVerificationEmail = require('./helpers/emailHelpers').sendVerificationEmail
 var sendEmail = require('./helpers/emailHelpers').sendEmail
 
 const HASH_COST = 10;
@@ -10,10 +9,10 @@ const HASH_COST = 10;
 router.post('/add', async (req, res) => {
     const email = req.body.email;
     const name = req.body.name;
-    const role = req.body.role;
     const phone = req.body.phone;
     const emailVerified = false;
     const approved = false;
+    const role = "staff"
     const verificationToken = crypto({length: 16});
     const passwordHash = await bcrypt.hash(req.body.password, HASH_COST);
     try {
@@ -28,8 +27,7 @@ router.post('/add', async (req, res) => {
             message: 'Successfully added '+ role,
             staff: staffAdded
         });
-        //await sendVerificationEmail(email, verificationToken);
-        await sendEmail(email,'noreply@school.edu','Verify Your Email','Email Body','html')
+        await sendEmail(email,'noreply@school.edu','Verify Your Staff Email','Email Body','html')
     } catch (e) {
         res.json({
             message: 'Failed adding' + role
@@ -61,8 +59,7 @@ router.post('/sendMessages', async (req, res) => {
     //TODO: body and html
     try {
         const dbData = await req.db.collection("Student").find({grade: grades}).project({email:1, _id:0}).toArray();
-        emails = dbData.map(m => m.email)
-        await sendEmail(emails,email,subject,body,'TODO');
+        await sendEmail(dbData,email,subject,body,'TODO');
         res.json({
           message:'Success'
         })
@@ -93,7 +90,34 @@ router.post('/sendMessage', async (req, res) => {
     })
   }
 
+});
 
-)};
+router.post('/invite/students', async (req,res)=>{
+  emails = req.body.email
+  grade = req.body.grade
+  const role = "student"
+  const emailVerified = false
+  const approved = true
+  //TODO: check if emails already exist in database
+  //TODO: use sendgrid to validate emails
+  //TODO: assert all lengths equal
+  emails_dict = emails.map(x=>{return {email:x}})
+  users_dict = emails.map(x=>{return {email:x,verificationToken:crypto({length: 16}),role:role }})
+  //records = names.map((x,i)=>[{name:x,email:emails[i],grade:grades[i],phone:phones[i],passwordHash:await bcrypt.hash(req.body.password[i], HASH_COST),verificationToken:crypto({length: 16})}])
+  try{
+    await req.db.collection('Student').insertMany(emails_dict)
+    await req.db.collection("User").insertMany(users_dict)
+    await sendEmail(emails,'noreply@school.edu','Verify Your Student Email','Email Body','html')
+    res.json({
+        message: 'Successfully invited students',
+        student: emails
+    });
+  }catch(e){
+    res.json({
+        message: 'Failed inviting students'
+    });
+  }
+  res.send()
+});
 
 module.exports = router;
