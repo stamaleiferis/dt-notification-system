@@ -15,5 +15,4 @@ const sendEmail = (emails,from,subject,body,html) => {
 
 }
 
-exports.sendVerificationEmail = sendVerificationEmail
 exports.sendEmail = sendEmail
