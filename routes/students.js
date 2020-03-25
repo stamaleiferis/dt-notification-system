@@ -12,16 +12,19 @@ router.post('/add', async (req, res) => {
     const name = req.body.name;
     const grade = req.body.grade;
     const phone = req.body.phone;
-    const role = "STUDENT";
+
+    const role = "STUDENT"
+    const emailVerified = false
+    const approved = false
     // TODO: for email-based verification
     const verificationToken = crypto({length: 16});
     const passwordHash = await bcrypt.hash(req.body.password, HASH_COST);
     try {
         const studentAdded = await req.db.collection("Student").insert({
-            name, email, grade, phone, passwordHash, verificationToken
+            name, email, grade, phone, emailVerified, approved
         });
         await req.db.collection("User").insert({
-            email, passwordHash, role
+            email, passwordHash, verificationToken, role
         });
         res.json({
             message: 'Successfully added student',
@@ -32,6 +35,7 @@ router.post('/add', async (req, res) => {
             message: 'Failed adding student'
         });
     }
+    res.send()
 });
 
 // TODO: for testing checkRole handler
