@@ -92,8 +92,6 @@ router.post('/sendMessage', async (req, res) => {
       message:'Failure'
     })
   }
-
-
-)};
+});
 
 module.exports = router;
