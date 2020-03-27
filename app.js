@@ -5,6 +5,7 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var logger = require('morgan');
 var bcrypt = require('bcrypt');
+const cors = require('cors');
 
 // passport for authentication by local strategy
 var passport = require("passport");
@@ -31,6 +32,21 @@ const uri = `mongodb://${process.env.DBUSER}:${process.env.DBPASSWORD}@${process
 const client = new MongoClient(uri);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_sauce';
+
+let corsRegexString = process.env.CORS_REGEX || 'localhost';
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', corsRegexString)
+  next();
+})
+
+let corsRegex = new RegExp(`.*${corsRegexString}.*`);
+
+let corsOptions = {
+  origin: corsRegex,
+  credentials: true,
+}
+app.use(cors(corsOptions));
 
 async function main() {
   try {
