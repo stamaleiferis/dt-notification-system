@@ -13,7 +13,7 @@ var LocalStrategy = require("passport-local").Strategy;
 var JWTStrategy = require("passport-jwt").Strategy;
 
 var indexRouter = require('./routes/index');
-var testRouter = require('./routes/test');
+var utilRouter = require('./routes/util');
 var studentsRouter = require('./routes/students');
 var staffRouter = require('./routes/staff');
 require('dotenv').config();
@@ -97,10 +97,10 @@ async function main() {
     app.use('/', indexRouter);
 
     // test Router for testing health, database connection, and post
-    app.use('/test/', (req, res, next) => {
+    app.use('/util/', (req, res, next) => {
       req.db = db;
       next();
-    }, testRouter);
+    }, utilRouter);
 
     app.use('/students/', (req, res, next) => {
       req.db = db;
