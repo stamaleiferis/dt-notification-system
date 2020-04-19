@@ -24,14 +24,21 @@ router.post('/login', (req, res, next) => {
           email: user.email,
           expires: Date.now() + parseInt(JWT_EXPIRATION_MS),
         };
-        req.login(payload, {session: false}, (error) => {
+        req.login(payload, {session: false}, async (error) => {
           if (error) {
             return next(error);
           }
           const cookie = jwt.sign(JSON.stringify(payload), JWT_SECRET);
           // set jwt-signed cookie on response
           res.cookie('jwt', cookie);
-          res.status(200).send({ user });
+          try {
+            let isStaff = user.role && user.role.toLowerCase() === "staff"
+            let userToSend  = await req.db.collection(isStaff ? "Staff" : "Student").findOne({email: user.email});
+            res.status(200).send({isStaff, userToSend});
+          } catch (e) {
+            console.log("Error: error fetching user after authentication", e);
+            res.status(500).send({ error: e });
+          }
         });
       }
     })(req, res)
