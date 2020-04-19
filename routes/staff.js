@@ -208,4 +208,31 @@ router.get('/status/:email', async (req,res)=>{
   }
 });
 
+router.post('/approve/student', async (req,res)=>{
+  const approve = req.body.approve
+  const email = req.body.email
+
+  try{
+    const dbData = await req.db.collection("Student").updateOne({email: email},{$set:{approved:approve}});
+    res.send({Success:true})
+
+  }catch(e){
+    res.send({Success:false})
+  }
+});
+
+router.post('/approve/staff', async (req,res)=>{
+  const approve = req.body.approve
+  const email = req.body.email
+
+  try{
+    const dbData = await req.db.collection("Staff").updateOne({email: email},{$set:{approved:approve}});
+    res.send({Success:true})
+
+  }catch(e){
+    res.send({Success:false})
+  }
+});
+
+
 module.exports = router;
