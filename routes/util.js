@@ -33,13 +33,13 @@ router.get('/allStudents', async (req, res, next) => {
     }
 });
 
-router.get('/addStudent/:name/:email/:grade/:phone', async (req, res, next) => {
+router.get('/addStudent/:name/:email/:grade/:phone/:password', async (req, res, next) => {
     try {
         const email = req.params.email;
         const name = req.params.name;
         const grade = req.params.grade;
         const phone = req.params.phone;
-        const password = req.params.phone;
+        const password = req.params.password;
 
         const role = "STUDENT"
         const emailVerified = false
