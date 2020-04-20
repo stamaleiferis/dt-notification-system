@@ -209,11 +209,11 @@ router.get('/status/:email', async (req,res)=>{
 });
 
 router.post('/approve/student', async (req,res)=>{
-  const approve = req.body.approve
+  const approved = req.body.approved
   const email = req.body.email
 
   try{
-    const dbData = await req.db.collection("Student").updateOne({email: email},{$set:{approved:approve}});
+    const dbData = await req.db.collection("Student").updateOne({email: email},{$set:{approved:approved}});
     res.send({Success:true})
 
   }catch(e){
