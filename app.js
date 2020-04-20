@@ -53,14 +53,6 @@ async function main() {
     await client.connect();
     const db = client.db(process.env.DB);
 
-    /*
-    Passport Authentication using local strategy
-    TODO: mongo collection 'users' must be set up with
-      - email
-      - passwordHash (hashed password that is stored)
-    */
-   // AUTHENTICATION USING JWT AND PASSPORT FOR MENTEE
-    // Local Strategy for email/username verification
     passport.use(new LocalStrategy({
         usernameField: 'email',
         passwordField: 'password',
