@@ -16,6 +16,16 @@ router.get('/', function(req, res, next) {
   res.send("This is the index page!");
 });
 
+router.get('/logout', (req, res, next) => {
+  try {
+    res.clearCookie('jwt');
+    res.json({message: "Logout successful."})
+  } catch (e) {
+    console.log("Error: logout", e);
+    res.status(500).json({message: 'Failed to clear cookie.'})
+  }
+});
+
 // login route
 router.post('/login', (req, res, next) => {
   passport.authenticate(
