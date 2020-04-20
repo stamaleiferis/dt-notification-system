@@ -41,7 +41,7 @@ router.post('/add', async (req, res) => {
     res.send()
 });
 
-router.get('/get/:email', async (req,res)=>{
+router.get('/get/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   const email = req.params.email
   try {
       const studentData = await req.db.collection("Student").find({email: email}).toArray();
@@ -66,7 +66,7 @@ router.get('/get/:email', async (req,res)=>{
   res.send()
 });
 
-router.get('/status/:email', async (req,res)=>{
+router.get('/status/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   const email = req.params.email
   try {
       const studentData = await req.db.collection("Student").find({email: email}).project({emailVerified:1,approved:1,_id:0}).toArray();
@@ -106,7 +106,7 @@ router.get('/verification/:email/:verificationToken', async (req,res)=>{
   res.send()
 });
 
-router.post('/delete', async (req,res)=>{
+router.post('/delete', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   email = req.body.email
   //TODO: assert email.length == 1
   await req.db.collection("Student").deleteOne({email:email})

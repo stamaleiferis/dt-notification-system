@@ -2,6 +2,7 @@ var express = require('express');
 var router = express.Router();
 var crypto = require('crypto-random-string');
 var bcrypt = require('bcrypt');
+var passport = require("passport");
 var sendEmail = require('./helpers/emailHelpers').sendEmail
 
 const HASH_COST = 10;
@@ -57,7 +58,7 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
   res.send()
 });
 
-router.post('/sendMessages', async (req, res) => {
+router.post('/sendMessages', passport.authenticate('jwt', {session: false}), async (req, res) => {
     const grades = req.body.grades;
     const subject = req.body.subject;
     const body = req.body.body;
@@ -80,7 +81,7 @@ router.post('/sendMessages', async (req, res) => {
     res.send()
 });
 
-router.post('/sendMessage', async (req, res) => {
+router.post('/sendMessage', passport.authenticate('jwt', {session: false}), async (req, res) => {
   email = req.body.emails
   subject = req.body.subject
   msg = req.body.msg
@@ -100,7 +101,7 @@ router.post('/sendMessage', async (req, res) => {
 
 });
 
-router.post('/invite/students', async (req,res)=>{
+router.post('/invite/students', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   emails = req.body.email
   grade = req.body.grade
   const role = "student"
@@ -129,7 +130,7 @@ router.post('/invite/students', async (req,res)=>{
 });
 
 //TODO: add route students/:grade to get all students of specific grade
-router.get('/students', async (req,res)=>{
+router.get('/students', passport.authenticate('jwt', {session: false}), async (req,res)=>{
 
   try {
       const dbData = await req.db.collection("Student").find().toArray();
@@ -145,7 +146,7 @@ router.get('/students', async (req,res)=>{
   res.send()
 });
 
-router.get('/staff', async (req,res)=>{
+router.get('/staff', passport.authenticate('jwt', {session: false}), async (req,res)=>{
 
   try {
       const dbDataStaff = await req.db.collection("Staff").find().toArray();
@@ -163,7 +164,7 @@ router.get('/staff', async (req,res)=>{
   res.send()
 });
 
-router.get('/get/:email', async (req,res)=>{
+router.get('/get/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   const email = req.params.email
   try {
       const staffData = await req.db.collection("Staff").find({email: email}).toArray();
@@ -188,7 +189,7 @@ router.get('/get/:email', async (req,res)=>{
   res.send()
 });
 
-router.get('/status/:email', async (req,res)=>{
+router.get('/status/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   const email = req.params.email
   try {
       const staffData = await req.db.collection("Staff").find({email: email}).project({emailVerified:1,approved:1,_id:0}).toArray();
