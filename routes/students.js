@@ -34,11 +34,13 @@ router.post('/add', async (req, res) => {
             student: studentAdded
         });
     } catch (e) {
-        res.json({
-            message: 'Failed adding student'
+      console.log("Error student.js#add")
+        res.status(500).json({
+            message: 'Failed adding student',
+            error: e
         });
     }
-    res.send()
+
 });
 
 router.get('/get/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
@@ -59,11 +61,13 @@ router.get('/get/:email', passport.authenticate('jwt', {session: false}), async 
           user: userData
       });
   }catch(e){
-    res.json({
-        message: 'Database read error'
+    console.log("Error student.js#get")
+    res.status(500).json({
+        message: 'Database read error',
+        error: e
     });
   }
-  res.send()
+
 });
 
 router.get('/status/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
@@ -76,13 +80,15 @@ router.get('/status/:email', passport.authenticate('jwt', {session: false}), asy
           emailVerified: studentData[0].emailVerified,
           approved: studentData[0].approved
         });
-      res.send()
+
       }
   }catch(e){
-    res.json({
+    console.log("Error student.js#status")
+    res.status(500).json({
         message: "Error",
+        error: e
       });
-    res.send()
+
   }
 });
 
@@ -95,22 +101,34 @@ router.get('/verification/:email/:verificationToken', async (req,res)=>{
   if (dbData[0]['verificationToken'] == verificationToken){
     try{
       verificationResult = await req.db.collection("User").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
-      success = true
+      res.json({
+        Success:true
+      });
     }catch(e){
-
+      console.log("Error student.js#verification")
+      res.status(500).json({
+        Success:false,
+        error: e
+      });
     }
+  }else{
+    res.json({
+      Success:false
+    });
   }
-  res.json({
-    Success:success
-  });
-  res.send()
+
 });
 
 router.post('/delete', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   email = req.body.email
   //TODO: assert email.length == 1
-  await req.db.collection("Student").deleteOne({email:email})
-  res.send()
+  try{
+    await req.db.collection("Student").deleteOne({email:email})
+    res.json({Success: true})
+  }catch(e){
+    console.log("Error student.js#delete")
+    res.status(500).json({Succes: false, error: e})
+}
 });
 
 // TODO: for testing checkRole handler

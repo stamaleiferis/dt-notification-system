@@ -30,11 +30,12 @@ router.post('/add', async (req, res) => {
         });
         await sendEmail(email,'noreply@school.edu','Verify Your Staff Email','Email Body',verificationToken)
     } catch (e) {
-        res.json({
-            message: 'Failed adding' + role
+        console.log("Error staff.js#add")
+        res.status(500).json({
+            message: 'Failed adding' + role,
+            error: e
         });
     }
-    res.send()
 
 });
 
@@ -47,15 +48,20 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
   if (dbData[0]['verificationToken'] == verificationToken){
     try{
       verificationResult = await req.db.collection("User").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
-      success = true
+      res.json({
+        Success:true
+      });
     }catch(e){
+      console.log("Error staff.js#verification/:email/:verificationToken")
+      res.status(500).json({
+        Success:false,
+        error:e
+      });
 
     }
   }
-  res.json({
-    Success:success
-  });
-  res.send()
+
+
 });
 
 router.post('/sendMessages', passport.authenticate('jwt', {session: false}), async (req, res) => {
@@ -73,12 +79,13 @@ router.post('/sendMessages', passport.authenticate('jwt', {session: false}), asy
         })
 
     } catch (e) {
-
-        res.json({
-            message: 'Failed'
+        console.log("Error staff.js#sendMessages")
+        res.status(500).json({
+            message: 'Failed',
+            error: e
         });
     }
-    res.send()
+
 });
 
 router.post('/sendMessage', passport.authenticate('jwt', {session: false}), async (req, res) => {
@@ -93,8 +100,10 @@ router.post('/sendMessage', passport.authenticate('jwt', {session: false}), asyn
       message:'Success'
     })
   }catch(e){
-    res.json({
-      message:'Failure'
+    console.log("Error staff.js#sendMessage")
+    res.status(500).json({
+      message:'Failure',
+      error: e
     })
   }
 
@@ -122,11 +131,13 @@ router.post('/invite/students', passport.authenticate('jwt', {session: false}), 
         student: emails
     });
   }catch(e){
-    res.json({
-        message: 'Failed inviting students'
+    console.log("Error staff.js#invite/students")
+    res.status(500).json({
+        message: 'Failed inviting students',
+        error: e
     });
   }
-  res.send()
+
 });
 
 //TODO: add route students/:grade to get all students of specific grade
@@ -139,11 +150,13 @@ router.get('/students', passport.authenticate('jwt', {session: false}), async (r
           students: dbData
       });
   }catch(e){
-    res.json({
-        message: 'Failed to get student records'
+    console.log("Error staff.js#students")
+    res.status(500).json({
+        message: 'Failed to get student records',
+        error: e
     });
   }
-  res.send()
+
 });
 
 router.get('/staff', passport.authenticate('jwt', {session: false}), async (req,res)=>{
@@ -157,11 +170,12 @@ router.get('/staff', passport.authenticate('jwt', {session: false}), async (req,
           user: dbDataUser
       });
   }catch(e){
-    res.json({
+    console.log("Error staff.js#staff")
+    res.status(500).json({
         message: 'Failed to get staff records'
     });
   }
-  res.send()
+
 });
 
 router.get('/get/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
@@ -182,11 +196,13 @@ router.get('/get/:email', passport.authenticate('jwt', {session: false}), async 
           user: userData
       });
   }catch(e){
-    res.json({
-        message: 'Database read error'
+    console.log("Error staff.js#get")
+    res.status(500).json({
+        message: 'Database read error',
+        error: e
     });
   }
-  res.send()
+
 });
 
 router.get('/status/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
@@ -199,13 +215,15 @@ router.get('/status/:email', passport.authenticate('jwt', {session: false}), asy
           emailVerified: staffData[0].emailVerified,
           approved: staffData[0].approved
         });
-      res.send()
+
       }
   }catch(e){
-    res.json({
+    console.log("Error staff.js#status")
+    res.status(500).json({
         message: "Error",
+        error: e
       });
-    res.send()
+
   }
 });
 
@@ -216,10 +234,11 @@ router.post('/approve/student', async (req,res)=>{
   try{
     const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approved}});
     //TODO send email to confirm account verification
-    res.send({Success:true})
+    res.json({Success:true})
 
   }catch(e){
-    res.send({Success:false})
+    console.log("Error staff.js#approve/student")
+    res.status(500).json({Success:false, error:e})
   }
 });
 
@@ -230,10 +249,11 @@ router.post('/approve/staff', async (req,res)=>{
   try{
     const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approve}});
     //TODO send email to confirm account verification
-    res.send({Success:true})
+    res.json({Success:true})
 
   }catch(e){
-    res.send({Success:false})
+    console.log("Error staff.js#approve/staff")
+    res.status(500).json({Success:false, error: e})
   }
 });
 
