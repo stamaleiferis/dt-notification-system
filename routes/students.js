@@ -94,7 +94,7 @@ router.get('/verification/:email/:verificationToken', async (req,res)=>{
   //TODO: assert dbData.length == 1
   if (dbData[0]['verificationToken'] == verificationToken){
     try{
-      verificationResult = await req.db.collection("Student").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
+      verificationResult = await req.db.collection("User").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
       success = true
     }catch(e){
 

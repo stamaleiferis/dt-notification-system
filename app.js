@@ -94,7 +94,10 @@ async function main() {
       }
     ));
 
-    app.use('/', indexRouter);
+    app.use('/', (req, res, next) => {
+      req.db = db;
+      next();
+    }, indexRouter);
 
     // test Router for testing health, database connection, and post
     app.use('/util/', (req, res, next) => {

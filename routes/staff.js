@@ -45,7 +45,7 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
   //TODO: assert dbData.length == 1
   if (dbData[0]['verificationToken'] == verificationToken){
     try{
-      verificationResult = await req.db.collection("Staff").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
+      verificationResult = await req.db.collection("User").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
       success = true
     }catch(e){
 
@@ -207,5 +207,34 @@ router.get('/status/:email', async (req,res)=>{
     res.send()
   }
 });
+
+router.post('/approve/student', async (req,res)=>{
+  const approved = req.body.approved
+  const email = req.body.email
+
+  try{
+    const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approved}});
+    //TODO send email to confirm account verification
+    res.send({Success:true})
+
+  }catch(e){
+    res.send({Success:false})
+  }
+});
+
+router.post('/approve/staff', async (req,res)=>{
+  const approve = req.body.approve
+  const email = req.body.email
+
+  try{
+    const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approve}});
+    //TODO send email to confirm account verification
+    res.send({Success:true})
+
+  }catch(e){
+    res.send({Success:false})
+  }
+});
+
 
 module.exports = router;
