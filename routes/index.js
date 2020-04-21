@@ -67,13 +67,13 @@ router.get('/verification/:email/:verificationToken',async (req, res, next) => {
     const dbData = await req.db.collection("User").find({email: email}).project({verificationToken:1,_id:0}).toArray();
     if (verificationToken == dbData[0]['verificationToken']){
       await req.db.collection("Student").updateOne({email: email},{$set:{approved:approve}});
-      res.json.status({Success:true})
+      res.json({Success:true})
     }else{
       res.json({Success:false})
     }
   }catch(e){
     console.log("Error index.js#verification")
-    res.json.status(500).({Success:false, error:e})
+    res.status(500).json({Success:false, error:e})
   }
 
 });
@@ -87,7 +87,7 @@ router.post('/password/change',async (req, res, next) => {
     res.json({Success:true})
   }catch(e){
     console.log("Error index.js#password/change")
-    res.json.status(500).({Success:false, error: e})
+    res.status(500).json({Success:false, error: e})
   }
 });
 
@@ -100,7 +100,7 @@ router.post('/password/forgot',async (req, res, next) => {
     res.json({Success:true})
   }catch(e){
     console.log("Error index.js#password/forgot")
-    res.json.status(500).({Success:false, error: e})
+    res.status(500).json({Success:false, error: e})
 
   }
 });
