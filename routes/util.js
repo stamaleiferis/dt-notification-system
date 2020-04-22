@@ -180,6 +180,8 @@ router.get('/data/clear/all', async (req, res, next) => {
         await req.db.collection("Staff").remove({});
         await req.db.collection("Student").remove({});
         await req.db.collection("User").remove({});
+        await req.db.collection("Teacher").remove({});
+        await req.db.collection("Course").remove({});
         res.status(200).send({'message' : 'deleted all records!'});
     } catch (e) {
         res.status(500).send({'error' : e});
@@ -213,6 +215,17 @@ router.get('/data/clear/user', async (req, res, next) => {
     }
 });
 
+router.get('/data/clear/teacher', async (req, res, next) => {
+    try {
+        await req.db.collection("Teacher").remove({});
+        res.status(200).send({'message' : 'deleted all student records!'});
+    } catch (e) {
+        res.status(500).send({error: e})
+    }
+});
+
+
+
 router.get('/drive/all', async (req, res, next) => {
   drive.files.list({fields:'*'}, (err, response) => {
     if (err) throw err;
@@ -230,15 +243,16 @@ router.get('/drive/all', async (req, res, next) => {
 })
 
 router.get('/drive/deleteAll', async (req, res, next) => {
-  const ids = req.body.id
-
   drive.files.list({fields:'*'}, (err, response) => {
     if (err) throw err;
     const files = response.data.files;
     if (files.length) {
       files.map(async (file) => {
-        //console.log(file);
-        await drive.files.delete({fileId:file.id})
+        try{
+          await drive.files.delete({fileId:file.id})
+        }catch(e){
+          console.log(e+"\n FileID: "+file.id, " FileName: "+file.name)
+        }
       });
       res.json({files:files})
     } else {

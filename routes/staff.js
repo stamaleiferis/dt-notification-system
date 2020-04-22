@@ -4,6 +4,19 @@ var crypto = require('crypto-random-string');
 var bcrypt = require('bcrypt');
 var passport = require("passport");
 var sendEmail = require('./helpers/emailHelpers').sendEmail
+const ObjectID = require('mongodb').ObjectID;
+var createFolder = require('./helpers/driveHelpers').createFolder
+
+const credentials = require('./helpers/credentials.json');
+const { google } = require('googleapis');
+const scopes = [
+  'https://www.googleapis.com/auth/drive'
+];
+const auth = new google.auth.JWT(
+  credentials.client_email, null,
+  credentials.private_key, scopes
+);
+const drive = google.drive({ version: "v3", auth });
 
 const HASH_COST = 10;
 
@@ -26,7 +39,7 @@ router.post('/add', async (req, res) => {
         });
         res.json({
             message: 'Successfully added '+ role,
-            staff: staffAdded
+            staff: staffAdded   //TODO: filter staffAdded to return only needed info
         });
         await sendEmail(email,'noreply@school.edu','Verify Your Staff Email','Email Body',verificationToken)
     } catch (e) {
@@ -255,6 +268,36 @@ router.post('/approve/staff', async (req,res)=>{
     console.log("Error staff.js#approve/staff")
     res.status(500).json({Success:false, error: e})
   }
+});
+
+router.post('/course', async (req,res)=>{ //TODO allow two folders to have same name?, mitigate errors at different levels
+  const name = req.body.name
+  const teacher = req.body.teacher
+  const grade = req.body.grade
+  const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
+
+  try{
+
+    let [folder_id, webViewLink] = await createFolder(name,rootFolderId )
+    const assignments = []
+
+    const courseAdded = await req.db.collection("Course").insertOne({
+        name, grade, teacher, folder_id, webViewLink, assignments
+      });
+
+    console.log(courseAdded.ops[0]._id) //TODO insert this to teacher document, courses array
+
+    const teacherEmail = await req.db.collection("Teacher").findOne({_id: ObjectID(teacher)},{email:1})
+    await sendEmail(teacherEmail,'noreply@school.edu','You Were Added As Course Teacher','Email Body',teacher)
+
+    res.json({Success: true, folder_id:folder_id, webViewLink:webViewLink})
+
+  }catch(e){
+    console.log("Error staff.js#course: "+e)
+    res.status(500).json({error: e})
+
+  }
+
 });
 
 
