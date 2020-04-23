@@ -165,6 +165,24 @@ router.get('/allTeachers', async (req, res, next) => {
     }
 });
 
+router.get('/allCourses', async (req, res, next) => {
+    try {
+        const dbData = await req.db.collection("Course").find().toArray();
+        res.status(200).send({'allCourses' : dbData});
+    } catch (e) {
+        res.status(500).send({'error' : e});
+    }
+});
+
+router.get('/allAssignments', async (req, res, next) => {
+    try {
+        const dbData = await req.db.collection("Assignment").find().toArray();
+        res.status(200).send({'allAssignments' : dbData});
+    } catch (e) {
+        res.status(500).send({'error' : e});
+    }
+});
+
 
 router.get('/allUsers', async (req, res, next) => {
     try {

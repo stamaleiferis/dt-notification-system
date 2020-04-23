@@ -18,15 +18,17 @@ router.post('/add', async (req, res) => {
     const role = "STUDENT"
     const emailVerified = false
     const approved = false
-    // TODO: for email-based verification
+
     const verificationToken = crypto({length: 16});
     const passwordHash = await bcrypt.hash(req.body.password, HASH_COST);
+
+    const courses = []
     try {
         const studentAdded = await req.db.collection("Student").insert({
-            name, email, grade, phone, emailVerified, approved
+            name, email, grade, phone, courses
         });
         await req.db.collection("User").insert({
-            email, passwordHash, verificationToken, role
+            email, passwordHash, verificationToken, role, emailVerified, approved
         });
         await sendEmail(email,'noreply@school.edu','Verify Your Student Email','Email Body',verificationToken)
         res.json({
@@ -102,18 +104,18 @@ router.get('/verification/:email/:verificationToken', async (req,res)=>{
     try{
       verificationResult = await req.db.collection("User").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
       res.json({
-        Success:true
+        success:true
       });
     }catch(e){
       console.log("Error student.js#verification")
       res.status(500).json({
-        Success:false,
+        success:false,
         error: e
       });
     }
   }else{
     res.json({
-      Success:false
+      success:false
     });
   }
 
@@ -124,7 +126,7 @@ router.post('/delete', passport.authenticate('jwt', {session: false}), async (re
   //TODO: assert email.length == 1
   try{
     await req.db.collection("Student").deleteOne({email:email})
-    res.json({Success: true})
+    res.json({success: true})
   }catch(e){
     console.log("Error student.js#delete")
     res.status(500).json({Succes: false, error: e})

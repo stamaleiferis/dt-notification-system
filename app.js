@@ -16,6 +16,7 @@ var indexRouter = require('./routes/index');
 var utilRouter = require('./routes/util');
 var studentsRouter = require('./routes/students');
 var staffRouter = require('./routes/staff');
+var teachersRouter = require('./routes/teachers')
 require('dotenv').config();
 
 var app = express();
@@ -106,6 +107,11 @@ async function main() {
       req.db = db;
       next();
     }, staffRouter);
+
+    app.use('/teachers/', (req, res, next) => {
+      req.db = db;
+      next();
+    }, teachersRouter);
 
     // catch 404 and forward to error handler
     app.use(function(req, res, next) {

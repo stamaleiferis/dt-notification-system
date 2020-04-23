@@ -10,6 +10,10 @@ const auth = new google.auth.JWT(
 const drive = google.drive({ version: "v3", auth });
 const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
 
+const createCourseFolder = async (name) => {
+  return createFolder (name, rootFolderId)
+}
+
 const createFolder = async (name, parent) => {
 
   var fileMetadata = {
@@ -26,7 +30,7 @@ const createFolder = async (name, parent) => {
   return [file.data.id, file.data.webViewLink]
 }
 
-const uploadPdf = async (name, type, parent, attachment) => {
+const uploadPdf = async (name, parent, attachment) => {
 
   var fileMetadata = {
   name: name
@@ -42,7 +46,9 @@ const uploadPdf = async (name, type, parent, attachment) => {
     fields: 'id'
   })
   console.log(file)
-  return file.data.id
+  return [file.data.id, file.data.webViewLink]
 
 }
 exports.createFolder = createFolder
+exports.createCourseFolder = createCourseFolder
+exports.uploadPdf = uploadPdf
