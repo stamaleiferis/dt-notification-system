@@ -73,7 +73,7 @@ router.get('/verification/:email/:verificationToken',async (req, res, next) => {
     }
   }catch(e){
     console.log("Error index.js#verification")
-    res.json.status(500).({Success:false, error:e})
+    res.status(500).json({Success:false, error:e})
   }
 
 });
@@ -87,7 +87,7 @@ router.post('/password/change',async (req, res, next) => {
     res.json({Success:true})
   }catch(e){
     console.log("Error index.js#password/change")
-    res.json.status(500).({Success:false, error: e})
+    res.status(500).json({Success:false, error: e})
   }
 });
 
@@ -100,7 +100,7 @@ router.post('/password/forgot',async (req, res, next) => {
     res.json({Success:true})
   }catch(e){
     console.log("Error index.js#password/forgot")
-    res.json.status(500).({Success:false, error: e})
+    resstatus(500).json({Success:false, error: e})
 
   }
 });
