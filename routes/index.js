@@ -100,8 +100,7 @@ router.post('/password/forgot',async (req, res, next) => {
     res.json({Success:true})
   }catch(e){
     console.log("Error index.js#password/forgot")
-    resstatus(500).json({Success:false, error: e})
-
+    res.status(500).json({Success:false, error: e})
   }
 });
 
