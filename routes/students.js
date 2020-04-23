@@ -5,11 +5,12 @@ var bcrypt = require('bcrypt');
 var checkRole = require('../utils/handlers').checkRole;
 var passport = require("passport");
 var sendEmail = require('./helpers/emailHelpers').sendEmail
-
+var ObjectID = require('mongodb').ObjectID;
+var uploadPdf = require('./helpers/driveHelpers').uploadPdf
 
 const HASH_COST = 10;
 
-router.post('/add', async (req, res) => {
+router.post('/student', async (req, res) => {
     const email = req.body.email;
     const name = req.body.name;
     const grade = req.body.grade;
@@ -45,7 +46,7 @@ router.post('/add', async (req, res) => {
 
 });
 
-router.get('/get/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
+router.get('/student/:email', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   const email = req.params.email
   try {
       const studentData = await req.db.collection("Student").find({email: email}).toArray();
@@ -121,7 +122,7 @@ router.get('/verification/:email/:verificationToken', async (req,res)=>{
 
 });
 
-router.post('/delete', passport.authenticate('jwt', {session: false}), async (req,res)=>{
+router.delete('/student', passport.authenticate('jwt', {session: false}), async (req,res)=>{
   email = req.body.email
   //TODO: assert email.length == 1
   try{
@@ -130,12 +131,67 @@ router.post('/delete', passport.authenticate('jwt', {session: false}), async (re
   }catch(e){
     console.log("Error student.js#delete")
     res.status(500).json({Succes: false, error: e})
-}
+  }
 });
+
+router.put('/student', passport.authenticate('jwt', {session: false}), async (req,res)=>{
+  const name = req.body.name
+  const phone = req.body.phone
+  const id = req.body.id
+
+  try{
+    await req.db.collection("Student").findAndModify({_id: ObjectID(id)},{cno:1},{"$set":{name: name,phone:phone}})
+    res.json({success:true})
+  }catch(e){
+    console.log("Error student.js#put student")
+    res.status(500).json({error: e})
+  }
+
+});
+
+router.get('/assignments/:studentId', passport.authenticate('jwt', {session: false}), async (req,res)=>{
+ const studentId = req.params.studentId
+
+ try{
+   let dbData1 = await req.db.collection("Student").find({_id:ObjectID(studentId)}).project({_id:0,grade:1}).toArray()
+   const grade = dbData[0]
+   let dbData2 = await req.db.collection("Course").find({grade:grade}).project({_id:0,assignments:1}).toArray()
+
+   //const assignments = await req.db.collection("Assignment").find({courseId:courseId}).project(_id:0,assignmentFileLink:1).toArray()
+   res.json({success:true, assignments:dbData2})
+ }catch(e){
+   console.log("Error student.js#get assignments")
+   res.status(500).json({error: e})
+ }
+
+});
+
+router.post('/assignment', passport.authenticate('jwt', {session: false}), async (req,res)=>{
+ const assignmentId = req.body.assignment
+ const studentId = req.body.studentId
+ const file = req.body.file
+
+ try{
+   const student = await req.db.collection("Student").find({_id:ObjectID(studentId)}).project({_id:0,name:1}).toArray()
+   const assignment = await req.db.collection("Assignment").find({_id:ObjectID(assignmentId)}).project({_id:0,submissionFolderId:1,name:1}).toArray()
+   const submissionFolderId = assignment[0].submissionFolderId
+   const assignmentName = assignment[0].name
+   const studentName = student[0].name
+   uploadPdf(studentName+"'s submission for assignment "+assignmentName,submissionFolderId,file)
+   res.json({success:true})
+ }catch(e){
+   console.log("Error student.js#post assignment")
+   res.status(500).json({error: e})
+ }
+
+});
+
 
 // TODO: for testing checkRole handler
 router.get('/onlyStudent', checkRole("STUDENT"), passport.authenticate('jwt', {session: false}), (req, res, next) => {
     res.status(200).send("You now have secret knowledge!");
 });
+
+
 
 module.exports = router;
