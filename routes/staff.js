@@ -322,12 +322,35 @@ router.post('/course', async (req,res)=>{ //TODO allow two folders to have same 
     res.json({success: true, folder_id:_id, webViewLink:webViewLink})
 
   }catch(e){
-    console.log("Error staff.js#course: "+e)
+    console.log("Error staff.js#post course: "+e)
     res.status(500).json({error: e})
 
   }
 
 });
 
+router.delete('/course/:id', async (req,res)=>{
+  const id = req.params.id
+
+  try{
+    await req.db.collection("Course").deleteOne({_id:ObjectID(id)})
+    res.json({success:true})
+  }catch(e){
+    console.log("Error staff.js#delete course: "+e)
+    res.status(500).json({error: e})
+  }
+
+});
+
+router.get('/courses', async (req,res)=>{
+  try{
+    const courses = await req.db.collection("Course").find({}).toArray()
+    res.json({success:true, courses:courses})
+  }catch(e){
+    console.log("Error staff.js#courses: "+e)
+    res.status(500).json({error: e})
+  }
+
+});
 
 module.exports = router;

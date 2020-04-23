@@ -92,14 +92,14 @@ router.post('/sendMessage', async (req, res) => {
 router.post('/assignment', async (req, res) => {
   const course = req.body.course //parent folder
   const name = req.body.name
-  //const file = req.body.file
+  //const file = req.body.file // pdf or doc to upload
   //const file = fs.createReadStream('./helpers/fphys-09-01206.pdf')
 
 
   try{
     //const file = fs.createReadStream('fphys-09-01206.pdf') //TODO fix this
-    const [assignment_id, assignment_webViewLink] = createFolder(name,course)
-    const [submission_id, submission_webViewLink] = createFolder("Submission Folder for "+name,assignment_id)
+    const [assignment_id, assignment_webViewLink] = createFolder(name,course) //assignment folder
+    const [submission_id, submission_webViewLink] = createFolder("Submission Folder for "+name,assignment_id) //submission folder
     const [assignment_pdf_id, assignment_file_webViewLink] = uploadPdf("Assignment "+name+" instructions",assignment_id,file)
     const dbData = await req.db.collection("Course").find({_id:course}).project({_id:0,name:1,grade:1}).toArray()
     const className = dbData[0].name
@@ -133,6 +133,25 @@ router.post('/assignment', async (req, res) => {
 
 });
 
+router.get('/courses/:teacherId', async (req, res) => {
+  const teacherId = req.params.teacherId
+  try{
+    const courses = await req.db.collection("Course").find({teacher:teacherId}).toArray()
+    res.json({success:true, courses:courses})
+  }catch(e){
+    res.status(500).json({error: e})
+  }
+});
+
+router.get('/assignments/:courseId', async (req, res) => {
+  const courseId = req.params.courseId
+  try{
+    const assignments = await req.db.collection("Assignment").find({courseId:courseId}).toArray()
+    res.json({success:true, assignments:assignments})
+  }catch(e){
+    res.status(500).json({error: e})
+  }
+});
 
 
 module.exports = router;
