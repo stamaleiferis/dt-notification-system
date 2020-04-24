@@ -4,6 +4,8 @@ var crypto = require('crypto-random-string');
 var bcrypt = require('bcrypt');
 var passport = require("passport");
 var sendEmail = require('./helpers/emailHelpers').sendEmail
+var ObjectID = require('mongodb').ObjectID;
+var createCourseFolder = require('./helpers/driveHelpers').createCourseFolder
 
 const HASH_COST = 10;
 
@@ -19,14 +21,14 @@ router.post('/add', async (req, res) => {
     try {
         //TODO: check if email is already in database
         const staffAdded = await req.db.collection("Staff").insert({
-            name, email, phone, emailVerified, approved
+            name, email, phone
         });
         await req.db.collection("User").insert({
-            email, passwordHash, role, verificationToken
+            email, passwordHash, role, verificationToken,emailVerified, approved
         });
         res.json({
             message: 'Successfully added '+ role,
-            staff: staffAdded
+            staff: staffAdded   //TODO: filter staffAdded to return only needed info
         });
         await sendEmail(email,'noreply@school.edu','Verify Your Staff Email','Email Body',verificationToken)
     } catch (e) {
@@ -49,12 +51,12 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
     try{
       verificationResult = await req.db.collection("User").findAndModify({email: email},{cno:1},{"$set":{emailVerified: true}})
       res.json({
-        Success:true
+        success:true
       });
     }catch(e){
       console.log("Error staff.js#verification/:email/:verificationToken")
       res.status(500).json({
-        Success:false,
+        success:false,
         error:e
       });
 
@@ -75,7 +77,7 @@ router.post('/sendMessages', passport.authenticate('jwt', {session: false}), asy
         const dbData = await req.db.collection("Student").find({grade: grades}).project({email:1, _id:0}).toArray();
         await sendEmail(dbData,email_from,subject,body,'TODO');
         res.json({
-          message:'Success'
+          message:'success'
         })
 
     } catch (e) {
@@ -97,7 +99,7 @@ router.post('/sendMessage', passport.authenticate('jwt', {session: false}), asyn
   try{
     await sendEmail(email,from,subject,msg,'TODO');
     res.json({
-      message:'Success'
+      message:'success'
     })
   }catch(e){
     console.log("Error staff.js#sendMessage")
@@ -119,13 +121,18 @@ router.post('/invite/students', passport.authenticate('jwt', {session: false}), 
   //TODO: check if emails already exist in database
   //TODO: use sendgrid to validate emails
   //TODO: assert all lengths equal
+  const tempPasswords = Array(emails.length).fill(null).map(x=>crypto({length: 16}))
   emails_dict = emails.map(x=>{return {email:x}})
-  users_dict = emails.map(x=>{return {email:x,verificationToken:crypto({length: 16}),role:role }})
-  //records = names.map((x,i)=>[{name:x,email:emails[i],grade:grades[i],phone:phones[i],passwordHash:await bcrypt.hash(req.body.password[i], HASH_COST),verificationToken:crypto({length: 16})}])
+  users_dict = emails.map((x,i)=>{return {email:x,verificationToken:crypto({length: 16}),role:role, approved:approved, emailVerified:emailVerified, passwordHash:tempPasswords[i]}})
+
   try{
-    await req.db.collection('Student').insertMany(emails_dict)
+    await req.db.collection('Student').insertMany(emails_dict) //why is emails_dict modified by insertMany??
     await req.db.collection("User").insertMany(users_dict)
-    await sendEmail(emails,'noreply@school.edu','Verify Your Student Email','Email Body','html')
+
+    emails.forEach(async (email,i)=>{
+        await sendEmail(email,'noreply@school.edu','You Were Added As a Student','Email Body',tempPasswords[i])
+    })
+
     res.json({
         message: 'Successfully invited students',
         student: emails
@@ -134,6 +141,40 @@ router.post('/invite/students', passport.authenticate('jwt', {session: false}), 
     console.log("Error staff.js#invite/students")
     res.status(500).json({
         message: 'Failed inviting students',
+        error: e
+    });
+  }
+
+});
+
+router.post('/invite/teachers', passport.authenticate('jwt', {session: false}), async (req,res)=>{
+  emails = req.body.email
+
+  const role = "teacher"
+  const emailVerified = false
+  const approved = true
+  //TODO: check if emails already exist in database
+  //TODO: use sendgrid to validate emails
+  //TODO: assert all lengths equal
+  const tempPasswords = Array(emails.length).fill(null).map(x=>crypto({length: 16}))
+  emails_dict = emails.map(x=>{return {email:x}})
+  users_dict = emails.map((x,i)=>{return {email:x,verificationToken:crypto({length: 16}),role:role, approved:approved, emailVerified:emailVerified, passwordHash:tempPasswords[i]}})
+  try{
+    await req.db.collection('Teacher').insertMany(emails_dict)
+    await req.db.collection("User").insertMany(users_dict)
+
+    emails.forEach(async (email,i)=>{
+        await sendEmail(email,'noreply@school.edu','You Were Added As a Teacher','Email Body',tempPasswords[i])
+    })
+
+    res.json({
+        message: 'Successfully invited teachers',
+        teacher: emails
+    });
+  }catch(e){
+    console.log("Error staff.js#invite/teachers")
+    res.status(500).json({
+        message: 'Failed inviting teachers',
         error: e
     });
   }
@@ -234,11 +275,11 @@ router.post('/approve/student', async (req,res)=>{
   try{
     const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approved}});
     //TODO send email to confirm account verification
-    res.json({Success:true})
+    res.json({success:true})
 
   }catch(e){
     console.log("Error staff.js#approve/student")
-    res.status(500).json({Success:false, error:e})
+    res.status(500).json({success:false, error:e})
   }
 });
 
@@ -249,13 +290,67 @@ router.post('/approve/staff', async (req,res)=>{
   try{
     const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approve}});
     //TODO send email to confirm account verification
-    res.json({Success:true})
+    res.json({success:true})
 
   }catch(e){
     console.log("Error staff.js#approve/staff")
-    res.status(500).json({Success:false, error: e})
+    res.status(500).json({success:false, error: e})
   }
 });
 
+router.post('/course', async (req,res)=>{ //TODO allow two folders to have same name?, mitigate errors at different levels
+  const name = req.body.name
+  const teacher = req.body.teacher
+  const grade = req.body.grade
+  const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
+
+  try{
+
+    let [_id, webViewLink] = await createCourseFolder(name,rootFolderId )
+    const assignments = []
+
+    const courseAdded = await req.db.collection("Course").insertOne({
+        name, grade, teacher, _id, webViewLink, assignments
+      });
+
+    await req.db.collection("Teacher").updateOne({_id:ObjectID(teacher)},{$push:{courses:_id}})
+    await req.db.collection("Student").update({grade:grade},{$push:{courses:_id}})
+
+    const teacherEmail = await req.db.collection("Teacher").findOne({_id: ObjectID(teacher)},{email:1})
+    await sendEmail(teacherEmail,'noreply@school.edu','You Were Added As Course Teacher','Email Body',teacher)
+
+    res.json({success: true, folder_id:_id, webViewLink:webViewLink})
+
+  }catch(e){
+    console.log("Error staff.js#post course: "+e)
+    res.status(500).json({error: e})
+
+  }
+
+});
+
+router.delete('/course/:id', async (req,res)=>{
+  const id = req.params.id
+
+  try{
+    await req.db.collection("Course").deleteOne({_id:ObjectID(id)})
+    res.json({success:true})
+  }catch(e){
+    console.log("Error staff.js#delete course: "+e)
+    res.status(500).json({error: e})
+  }
+
+});
+
+router.get('/courses', async (req,res)=>{
+  try{
+    const courses = await req.db.collection("Course").find({}).toArray()
+    res.json({success:true, courses:courses})
+  }catch(e){
+    console.log("Error staff.js#courses: "+e)
+    res.status(500).json({error: e})
+  }
+
+});
 
 module.exports = router;

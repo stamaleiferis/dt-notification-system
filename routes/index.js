@@ -67,7 +67,7 @@ router.get('/verification/:email/:verificationToken', async (req, res, next) => 
     const dbData = await req.db.collection("User").find({email: email}).project({verificationToken:1,_id:0}).toArray();
     if (verificationToken == dbData[0]['verificationToken']){
       await req.db.collection("Student").updateOne({email: email},{$set:{approved:approve}});
-      res.json.status({Success:true})
+      res.json({Success:true})
     }else{
       res.json({Success:false})
     }
