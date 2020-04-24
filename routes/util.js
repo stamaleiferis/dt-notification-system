@@ -236,12 +236,20 @@ router.get('/data/clear/user', async (req, res, next) => {
 router.get('/data/clear/teacher', async (req, res, next) => {
     try {
         await req.db.collection("Teacher").remove({});
-        res.status(200).send({'message' : 'deleted all student records!'});
+        res.status(200).send({'message' : 'deleted all teacher records!'});
     } catch (e) {
         res.status(500).send({error: e})
     }
 });
 
+router.get('/data/clear/courses', async (req, res, next) => {
+    try {
+        await req.db.collection("Course").remove({});
+        res.status(200).send({'message' : 'deleted all course records!'});
+    } catch (e) {
+        res.status(500).send({error: e})
+    }
+});
 
 
 router.get('/drive/all', async (req, res, next) => {

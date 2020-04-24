@@ -91,9 +91,8 @@ router.post('/sendMessages', passport.authenticate('jwt', {session: false}), asy
 });
 
 router.post('/sendMessage', passport.authenticate('jwt', {session: false}), async (req, res) => {
-  email = req.body.emails
-  subject = req.body.subject
-  msg = req.body.msg
+  email = req.body.email
+  msg = req.body.message
   from = 'TODO@todo.todo'
 
   try{
@@ -303,7 +302,6 @@ router.post('/course', async (req,res)=>{ //TODO allow two folders to have same 
   const teacher = req.body.teacher
   const grade = req.body.grade
   const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
-
   try{
 
     let [_id, webViewLink] = await createCourseFolder(name,rootFolderId )
@@ -333,7 +331,7 @@ router.delete('/course/:id', async (req,res)=>{
   const id = req.params.id
 
   try{
-    await req.db.collection("Course").deleteOne({_id:ObjectID(id)})
+    await req.db.collection("Course").deleteOne({_id: id})
     res.json({success:true})
   }catch(e){
     console.log("Error staff.js#delete course: "+e)
@@ -344,10 +342,27 @@ router.delete('/course/:id', async (req,res)=>{
 
 router.get('/courses', async (req,res)=>{
   try{
-    const courses = await req.db.collection("Course").find({}).toArray()
-    res.json({success:true, courses:courses})
+    let courses = await req.db.collection("Course").find({}).toArray()
+    Promise.all(courses.map( async (course) => {
+        let teacher = await req.db.collection("Teacher").find({courses: { $elemMatch: { $eq: course._id }}}).toArray()
+        let courseWithTeacher = {...course, teacherName: teacher[0].name}
+        return Promise.resolve(courseWithTeacher)
+      })).then((coursesWithTeacher) => {
+        res.json({success:true, courses: coursesWithTeacher})
+      })
   }catch(e){
     console.log("Error staff.js#courses: "+e)
+    res.status(500).json({error: e})
+  }
+
+});
+
+router.get('/teachers', async (req,res)=>{
+  try{
+    const teachers = await req.db.collection("Teacher").find({}).toArray()
+    res.json({success:true, teachers: teachers})
+  }catch(e){
+    console.log("Error staff.js#teachers: "+e)
     res.status(500).json({error: e})
   }
 
