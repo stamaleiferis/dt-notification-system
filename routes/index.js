@@ -60,7 +60,7 @@ router.post('/login', (req, res, next) => {
     })(req, res)
 });
 
-router.get('/verification/:email/:verificationToken',async (req, res, next) => {
+router.get('/verification/:email/:verificationToken', async (req, res, next) => {
   const email = req.params.email
   const verificationToken = req.params.verificationToken
   try{
@@ -78,7 +78,7 @@ router.get('/verification/:email/:verificationToken',async (req, res, next) => {
 
 });
 
-router.post('/password/change',async (req, res, next) => {
+router.post('/password/change', async (req, res, next) => {
   const password = req.body.newPassword
   const email = req.body.email
   const passwordHash = await bcrypt.hash(password, HASH_COST);
@@ -91,7 +91,7 @@ router.post('/password/change',async (req, res, next) => {
   }
 });
 
-router.post('/password/forgot',async (req, res, next) => {
+router.post('/password/forgot', async (req, res, next) => {
   const email = req.body.email
   const newTempPass = crypto({length: 16});
   try{
@@ -101,8 +101,11 @@ router.post('/password/forgot',async (req, res, next) => {
   }catch(e){
     console.log("Error index.js#password/forgot")
     res.status(500).json({Success:false, error: e})
-
   }
+});
+
+router.get('/isLoggedIn', passport.authenticate('jwt', {session: false}), (req, res, next) => {
+  res.json({message: "You have a fresh cookie!"});
 });
 
 module.exports = router;
