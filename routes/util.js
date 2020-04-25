@@ -47,7 +47,7 @@ router.get('/addStudent/:name/:email/:grade/:phone/:password', async (req, res, 
     try {
         const email = req.params.email;
         const name = req.params.name;
-        const grade = req.params.grade;
+        const grade = parsInt(req.params.grade);
         const phone = req.params.phone;
         const password = req.params.password;
 

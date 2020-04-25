@@ -13,7 +13,7 @@ const HASH_COST = 10;
 router.post('/student', async (req, res) => {
     const email = req.body.email;
     const name = req.body.name;
-    const grade = req.body.grade;
+    const grade = parseInt(req.body.grade);
     const phone = req.body.phone;
 
     const role = "STUDENT"
