@@ -67,7 +67,7 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
 });
 
 router.post('/sendMessages', passport.authenticate('jwt', {session: false}), async (req, res) => {
-    const grades = req.body.grades;
+    const grades = req.body.grades.map(e=>parseInt(e));
     const subject = req.body.subject;
     const body = req.body.body;
     const email_from = "noreply@school.edu"
@@ -300,7 +300,7 @@ router.post('/approve/staff', async (req,res)=>{
 router.post('/course', async (req,res)=>{ //TODO allow two folders to have same name?, mitigate errors at different levels
   const name = req.body.name
   const teacher = req.body.teacher
-  const grade = req.body.grade
+  const grade = parseInt(req.body.grade)
   const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
   try{
 
