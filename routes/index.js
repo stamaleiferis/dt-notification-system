@@ -8,6 +8,11 @@ var sendEmail = require('./helpers/emailHelpers').sendEmail
 
 const HASH_COST = 10;
 
+const collectionByRole = new Map([
+  ["TEACHER", "Teacher"],
+  ["STAFF", "Staff"],
+  ["STUDENT", 'Student']
+])
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret_sauce';
 const JWT_EXPIRATION_MS = process.env.JWT_EXPIRATION_MS || '25000000'; // > 6 hrs;
@@ -48,9 +53,9 @@ router.post('/login', (req, res, next) => {
           // set jwt-signed cookie on response
           res.cookie('jwt', cookie);
           try {
-            let isStaff = user.role && user.role.toLowerCase() === "staff"
-            let userToSend  = await req.db.collection(isStaff ? "Staff" : "Student").findOne({email: user.email});
-            res.status(200).send({isStaff, userToSend});
+            let userRole = user.role && user.role.toUpperCase()
+            let userToSend  = await req.db.collection(collectionByRole.get(userRole)).findOne({email: user.email});
+            res.status(200).send({userRole, userToSend});
           } catch (e) {
             console.log("Error: error fetching user after authentication", e);
             res.status(500).send({ error: e });
