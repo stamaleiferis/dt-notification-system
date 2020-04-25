@@ -66,16 +66,18 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
 
 });
 
-router.post('/sendMessages', passport.authenticate('jwt', {session: false}), async (req, res) => {
+router.post('/sendMessages', /*passport.authenticate('jwt', {session: false}),*/ async (req, res) => {
     const grades = req.body.grades.map(e=>parseInt(e));
+    //const grades = req.body.grades
     const subject = req.body.subject;
     const body = req.body.body;
     const email_from = "noreply@school.edu"
 
     //TODO: body and html
     try {
-        const dbData = await req.db.collection("Student").find({grade: grades}).project({email:1, _id:0}).toArray();
-        await sendEmail(dbData,email_from,subject,body,'TODO');
+        const dbData = await req.db.collection("Student").find({grade: {$in:grades}}).project({email:1, _id:0}).toArray();
+        console.log(dbData)
+        //await sendEmail(dbData,email_from,subject,body,'TODO');
         res.json({
           message:'success'
         })
