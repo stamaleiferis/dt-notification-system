@@ -371,14 +371,19 @@ router.get('/teachers', async (req,res)=>{
 
 router.get('/pending/:role', async (req,res)=>{
   let role = req.params.role
-  if (role == "teachers") role = "TEACHER"
-  else if (role == "students") role = "STUDENT"
-  console.log(role)
+  let collection = ''
+  if (role == "teachers") { role = "TEACHER" ; collection = "Teacher" }
+  else if (role == "students") { role = "STUDENT" ; collection = "Student" }
+  //else if (role == "staff") { role = "STAFF" ; collection = "Staff" }
+
 
   try{
-    const dbData = await req.db.collection("User").find({role:role,approved:false}).toArray()
-    res.json({data:dbData})
+    const userData = await req.db.collection("User").find({role:role,approved:false}).project({_id:0,email:1}).toArray()
+    const emails = userData.map(e=>e.email)
+    const roleData = await req.db.collection(collection).find({email: {$in:emails}}).toArray()
+    res.json({data:roleData})
   }catch(e){
+    console.log(e)
     res.status(500).json({error:e})
   }
 
