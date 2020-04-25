@@ -149,8 +149,7 @@ router.post('/invite/students', passport.authenticate('jwt', {session: false}), 
 });
 
 router.post('/invite/teachers', passport.authenticate('jwt', {session: false}), async (req,res)=>{
-  emails = req.body.email
-
+  emails = req.body.emails
   const role = "teacher"
   const emailVerified = false
   const approved = true
