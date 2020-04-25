@@ -114,7 +114,7 @@ router.post('/sendMessage', passport.authenticate('jwt', {session: false}), asyn
 });
 
 router.post('/invite/students', passport.authenticate('jwt', {session: false}), async (req,res)=>{
-  emails = req.body.email
+  emails = req.body.emails
   grade = req.body.grade
   const role = "student"
   const emailVerified = false
