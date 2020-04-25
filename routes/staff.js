@@ -66,7 +66,7 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
 
 });
 
-router.post('/sendMessages', /*passport.authenticate('jwt', {session: false}),*/ async (req, res) => {
+router.post('/sendMessages', passport.authenticate('jwt', {session: false}), async (req, res) => {
     const grades = req.body.grades.map(e=>parseInt(e));
     //const grades = req.body.grades
     const subject = req.body.subject;
@@ -368,5 +368,20 @@ router.get('/teachers', async (req,res)=>{
   }
 
 });
+
+router.get('/pending/:role', async (req,res)=>{
+  let role = req.params.role
+  if (role == "teachers") role = "TEACHER"
+  else if (role == "students") role = "STUDENT"
+  console.log(role)
+
+  try{
+    const dbData = await req.db.collection("User").find({role:role,approved:false}).toArray()
+    res.json({data:dbData})
+  }catch(e){
+    res.status(500).json({error:e})
+  }
+
+})
 
 module.exports = router;
