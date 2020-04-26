@@ -333,10 +333,11 @@ router.delete('/course/:id', async (req,res)=>{
   const id = req.params.id
 
   try{
+    // TODO: these operations should happen in bulk
     deleteFile(id)
-    await req.db.collection("Course").deleteOne({_id: ObjectID(id)})
+    await req.db.collection("Course").deleteOne({_id: id})
     await req.db.collection("Teacher").updateOne({courses:id},{$pull:{courses:id}})
-    await req.db.collection("Student").update({course:id},{$pull:{courses:_id}})
+    await req.db.collection("Student").update({courses:id},{$pull:{courses:id}})
 
     res.json({success:true})
   }catch(e){
