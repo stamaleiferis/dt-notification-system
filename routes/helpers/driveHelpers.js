@@ -45,7 +45,7 @@ const uploadPdf = async (name, parent, attachment) => {
     parents: [parent]
   };
   var media = {
-    mimeType: 'application/vnd.google-apps.file',
+    mimeType: 'application/pdf',
     body: attachment
   };
 
