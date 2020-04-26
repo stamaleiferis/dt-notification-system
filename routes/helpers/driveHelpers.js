@@ -26,8 +26,10 @@ const createFolder = async (name, parent) => {
     resource: fileMetadata,
     fields: '*'
   });
-
-  return [file.data.id, file.data.webViewLink]
+  return {
+    id: file.data.id, 
+    webViewLink: file.data.webViewLink
+  }
 }
 
 const deleteFile = async (fileId) => {
@@ -39,7 +41,8 @@ const deleteFile = async (fileId) => {
 const uploadPdf = async (name, parent, attachment) => {
 
   var fileMetadata = {
-  name: name
+    name: name,
+    parents: [parent]
   };
   var media = {
     mimeType: 'application/vnd.google-apps.file',
@@ -51,8 +54,10 @@ const uploadPdf = async (name, parent, attachment) => {
     media: media,
     fields: 'id'
   })
-  console.log(file)
-  return [file.data.id, file.data.webViewLink]
+  return {
+    id: file.data.id,
+    webViewLink: file.data.webViewLink
+  }
 
 }
 exports.createFolder = createFolder
