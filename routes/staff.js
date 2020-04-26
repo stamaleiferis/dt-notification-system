@@ -6,6 +6,7 @@ var passport = require("passport");
 var sendEmail = require('./helpers/emailHelpers').sendEmail
 var ObjectID = require('mongodb').ObjectID;
 var createCourseFolder = require('./helpers/driveHelpers').createCourseFolder
+var deleteFile = require('./helpers/driveHelpers').deleteFile
 
 const HASH_COST = 10;
 
@@ -332,7 +333,11 @@ router.delete('/course/:id', async (req,res)=>{
   const id = req.params.id
 
   try{
-    await req.db.collection("Course").deleteOne({_id: id})
+    deleteFile(id)
+    await req.db.collection("Course").deleteOne({_id: ObjectID(id)})
+    await req.db.collection("Teacher").updateOne({courses:id},{$pull:{courses:id}})
+    await req.db.collection("Student").update({course:id},{$pull:{courses:_id}})
+
     res.json({success:true})
   }catch(e){
     console.log("Error staff.js#delete course: "+e)

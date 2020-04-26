@@ -30,6 +30,12 @@ const createFolder = async (name, parent) => {
   return [file.data.id, file.data.webViewLink]
 }
 
+const deleteFile = async (fileId) => {
+  await drive.files.delete({
+    fileId: fileId
+  })
+}
+
 const uploadPdf = async (name, parent, attachment) => {
 
   var fileMetadata = {
@@ -50,5 +56,6 @@ const uploadPdf = async (name, parent, attachment) => {
 
 }
 exports.createFolder = createFolder
+exports.deleteFile = deleteFile
 exports.createCourseFolder = createCourseFolder
 exports.uploadPdf = uploadPdf
