@@ -306,20 +306,20 @@ router.post('/course', async (req,res)=>{ //TODO allow two folders to have same 
   const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
   try{
 
-    let [_id, webViewLink] = await createCourseFolder(name,rootFolderId )
+    let courseFolder = await createCourseFolder(name,rootFolderId )
     const assignments = []
 
     const courseAdded = await req.db.collection("Course").insertOne({
-        name, grade, teacher, _id, webViewLink, assignments
+        name, grade, teacher, _id: courseFolder.id, webLink: courseFolder.webViewLink, assignments
       });
 
-    await req.db.collection("Teacher").updateOne({_id:ObjectID(teacher)},{$push:{courses:_id}})
-    await req.db.collection("Student").update({grade:grade},{$push:{courses:_id}})
+    await req.db.collection("Teacher").updateOne({_id:ObjectID(teacher)},{$push:{courses:courseFolder.id}})
+    await req.db.collection("Student").update({grade:grade},{$push:{courses:courseFolder.id}})
 
     const teacherEmail = await req.db.collection("Teacher").findOne({_id: ObjectID(teacher)},{email:1})
     await sendEmail(teacherEmail,'noreply@school.edu','You Were Added As Course Teacher','Email Body',teacher)
 
-    res.json({success: true, folder_id:_id, webViewLink:webViewLink})
+    res.json({success: true, folder_id: courseFolder.id, webViewLink: courseFolder.webViewLink})
 
   }catch(e){
     console.log("Error staff.js#post course: "+e)

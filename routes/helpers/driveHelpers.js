@@ -11,7 +11,7 @@ const drive = google.drive({ version: "v3", auth });
 const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
 
 const createCourseFolder = async (name) => {
-  return createFolder (name, rootFolderId)
+  return await createFolder (name, rootFolderId)
 }
 
 const createFolder = async (name, parent) => {
