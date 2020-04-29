@@ -69,16 +69,13 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
 
 router.post('/sendMessages', passport.authenticate('jwt', {session: false}), async (req, res) => {
     const grades = req.body.grades.map(e=>parseInt(e));
-    //const grades = req.body.grades
     const subject = req.body.subject;
     const body = req.body.body;
-    const email_from = "noreply@school.edu"
 
     //TODO: body and html
     try {
         const dbData = await req.db.collection("Student").find({grade: {$in:grades}}).project({email:1, _id:0}).toArray();
-        console.log(dbData)
-        //await sendEmail(dbData,email_from,subject,body,'TODO');
+        await sendEmail(dbData, email_from, subject, body, 'TODO');
         res.json({
           message:'success'
         })
@@ -269,7 +266,7 @@ router.get('/status/:email', passport.authenticate('jwt', {session: false}), asy
   }
 });
 
-router.post('/approve/student', async (req,res)=>{
+router.post('/approve', async (req,res)=>{
   const approved = req.body.approved
   const email = req.body.email
 
@@ -279,22 +276,37 @@ router.post('/approve/student', async (req,res)=>{
     res.json({success:true})
 
   }catch(e){
-    console.log("Error staff.js#approve/student")
-    res.status(500).json({success:false, error:e})
+    console.log("Error staff.js#approve")
+    res.status(500).json({success:false, error: e})
   }
 });
 
-router.post('/approve/staff', async (req,res)=>{
-  const approve = req.body.approve
-  const email = req.body.email
+router.delete('/student/:emailToDelete', async (req,res)=>{
+  const email = req.params.emailToDelete
 
   try{
-    const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approve}});
+    await req.db.collection("User").remove({email: email});
+    await req.db.collection("Student").remove({email: email});
     //TODO send email to confirm account verification
     res.json({success:true})
 
   }catch(e){
-    console.log("Error staff.js#approve/staff")
+    console.log("Error staff.js#/student/delete", e)
+    res.status(500).json({success:false, error: e})
+  }
+});
+
+router.delete('/teacher/:emailToDelete', async (req,res)=>{
+  const email = req.params.emailToDelete
+
+  try{
+    await req.db.collection("User").remove({email: email});
+    await req.db.collection("Teacher").remove({email: email});
+    //TODO send email to confirm account verification
+    res.json({success:true})
+
+  }catch(e){
+    console.log("Error staff.js#/teacher/delete", e)
     res.status(500).json({success:false, error: e})
   }
 });
@@ -381,7 +393,6 @@ router.get('/pending/:role', async (req,res)=>{
   if (role === "teachers") { role = "TEACHER" ; collection = "Teacher" }
   else if (role === "students") { role = "STUDENT" ; collection = "Student" }
   //else if (role == "staff") { role = "STAFF" ; collection = "Staff" }
-
 
   try{
     const userData = await req.db.collection("User").find({role:role, approved:false}).project({_id:0,email:1}).toArray()
