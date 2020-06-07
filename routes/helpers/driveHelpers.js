@@ -11,7 +11,7 @@ const drive = google.drive({ version: "v3", auth });
 const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
 
 const createCourseFolder = async (name) => {
-  return createFolder (name, rootFolderId)
+  return await createFolder (name, rootFolderId)
 }
 
 const createFolder = async (name, parent) => {
@@ -26,17 +26,26 @@ const createFolder = async (name, parent) => {
     resource: fileMetadata,
     fields: '*'
   });
+  return {
+    id: file.data.id, 
+    webViewLink: file.data.webViewLink
+  }
+}
 
-  return [file.data.id, file.data.webViewLink]
+const deleteFile = async (fileId) => {
+  await drive.files.delete({
+    fileId: fileId
+  })
 }
 
 const uploadPdf = async (name, parent, attachment) => {
 
   var fileMetadata = {
-  name: name
+    name: name,
+    parents: [parent]
   };
   var media = {
-    mimeType: 'application/vnd.google-apps.file',
+    mimeType: 'application/pdf',
     body: attachment
   };
 
@@ -45,10 +54,13 @@ const uploadPdf = async (name, parent, attachment) => {
     media: media,
     fields: 'id'
   })
-  console.log(file)
-  return [file.data.id, file.data.webViewLink]
+  return {
+    id: file.data.id,
+    webViewLink: file.data.webViewLink
+  }
 
 }
 exports.createFolder = createFolder
+exports.deleteFile = deleteFile
 exports.createCourseFolder = createCourseFolder
 exports.uploadPdf = uploadPdf

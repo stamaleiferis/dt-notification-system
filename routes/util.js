@@ -47,7 +47,7 @@ router.get('/addStudent/:name/:email/:grade/:phone/:password', async (req, res, 
     try {
         const email = req.params.email;
         const name = req.params.name;
-        const grade = req.params.grade;
+        const grade = parseInt(req.params.grade);
         const phone = req.params.phone;
         const password = req.params.password;
 
@@ -236,12 +236,20 @@ router.get('/data/clear/user', async (req, res, next) => {
 router.get('/data/clear/teacher', async (req, res, next) => {
     try {
         await req.db.collection("Teacher").remove({});
-        res.status(200).send({'message' : 'deleted all student records!'});
+        res.status(200).send({'message' : 'deleted all teacher records!'});
     } catch (e) {
         res.status(500).send({error: e})
     }
 });
 
+router.get('/data/clear/courses', async (req, res, next) => {
+    try {
+        await req.db.collection("Course").remove({});
+        res.status(200).send({'message' : 'deleted all course records!'});
+    } catch (e) {
+        res.status(500).send({error: e})
+    }
+});
 
 
 router.get('/drive/all', async (req, res, next) => {

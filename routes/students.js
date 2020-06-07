@@ -13,7 +13,7 @@ const HASH_COST = 10;
 router.post('/student', async (req, res) => {
     const email = req.body.email;
     const name = req.body.name;
-    const grade = req.body.grade;
+    const grade = parseInt(req.body.grade);
     const phone = req.body.phone;
 
     const role = "STUDENT"
@@ -150,15 +150,11 @@ router.put('/student', passport.authenticate('jwt', {session: false}), async (re
 });
 
 router.get('/assignments/:studentId', passport.authenticate('jwt', {session: false}), async (req,res)=>{
- const studentId = req.params.studentId
-
+  const studentId = req.params.studentId
  try{
-   let dbData1 = await req.db.collection("Student").find({_id:ObjectID(studentId)}).project({_id:0,grade:1}).toArray()
-   const grade = dbData[0]
-   let dbData2 = await req.db.collection("Course").find({grade:grade}).project({_id:0,assignments:1}).toArray()
-
-   //const assignments = await req.db.collection("Assignment").find({courseId:courseId}).project(_id:0,assignmentFileLink:1).toArray()
-   res.json({success:true, assignments:dbData2})
+   let student = await req.db.collection("Student").findOne({_id:ObjectID(studentId)})
+   const assignments = await req.db.collection("Assignment").find({courseId:{$in: student.courses}}).project({_id:0,assignmentFileLink:1, name:1, date:1}).toArray()
+   res.json({success:true, assignments})
  }catch(e){
    console.log("Error student.js#get assignments")
    res.status(500).json({error: e})

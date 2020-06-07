@@ -8,7 +8,8 @@ var sendEmail = require('./helpers/emailHelpers').sendEmail
 var ObjectID = require('mongodb').ObjectID;
 var createFolder = require('./helpers/driveHelpers').createFolder
 var uploadPdf = require('./helpers/driveHelpers').uploadPdf
-const fs = require('fs');
+var multiparty = require('multiparty');
+var fs = require('fs')
 
 const HASH_COST = 10;
 
@@ -90,40 +91,39 @@ router.post('/sendMessage', async (req, res) => {
 });
 
 router.post('/assignment', async (req, res) => {
-  const course = req.body.course //parent folder
-  const name = req.body.name
-  //const file = req.body.file // pdf or doc to upload
-  //const file = fs.createReadStream('./helpers/fphys-09-01206.pdf')
-
-
   try{
-    //const file = fs.createReadStream('fphys-09-01206.pdf') //TODO fix this
-    const [assignment_id, assignment_webViewLink] = createFolder(name,course) //assignment folder
-    const [submission_id, submission_webViewLink] = createFolder("Submission Folder for "+name,assignment_id) //submission folder
-    const [assignment_pdf_id, assignment_file_webViewLink] = uploadPdf("Assignment "+name+" instructions",assignment_id,file)
-    const dbData = await req.db.collection("Course").find({_id:course}).project({_id:0,name:1,grade:1}).toArray()
-    const className = dbData[0].name
-    const grade = dbData[0].grade
+    var form = new multiparty.Form();
+  
+    form.parse(req, async (err, fields, files) =>  {
+      const course = fields.course[0]
+      const name = fields.name[0]
+      const date = fields.date[0]
+      const file = files.file[0]
+      const assignmentFolder = await createFolder(name,course) //assignment folder
+      const submissionFolder = await createFolder(`Submission Folder for${name}`, assignmentFolder.id) //submission folder
+      const assignmentFile = await uploadPdf(`Assignment ${name} instructions.pdf`, assignmentFolder.id, fs.createReadStream(file.path))
+      const dbData = await req.db.collection("Course").find({_id:course}).project({_id:0,name:1,grade:1}).toArray()
+      const className = dbData[0].name
+      const grade = dbData[0].grade
 
-    await req.db.collection("Assignment").insert({
-       name, courseName:className, courseId:course, submissionFolderId:submission_id,
-       submissionFolderLink:submission_webViewLink, assignmentFileId: assignment_pdf_id,
-       assignmentFileLink: assignment_file_webViewLink, date: Date.now()
-     })
+      await req.db.collection("Assignment").insert({
+        name, courseName:className, courseId:course, submissionFolderId:submissionFolder.id,
+        submissionFolderLink:submissionFolder.webViewLink, assignmentFileId: assignmentFile.id,
+        assignmentFileLink: assignmentFile.webViewLink, date: Date.now()
+      })
+    const emails = await req.db.collection("Student").find({grade:grade}).project({_id:0,email:1}).toArray()
+    const from = className+'@school.edu'
+    const subject = "New assignment: "+name+" for class "+ className
+    const body = "You can view the assignment here: "+assignmentFile.webViewLink+"/n Login to the system to submit"
+    const html = body
 
-   const emails = await req.db.collection("Student").find({grade:grade}).project({_id:0,email:1}).toArray()
-   const from = className+'@school.edu'
-   const subject = "New assignment: "+name+" for class "+ className
-   const body = "You can view the assignment here: "+assignment_file_webViewLink+"/n Login to the system to submit"
-   const html = body
-
-   await sendEmail(emails,from,subject,body,html);
-     res.json({
-       success:true
-     })
-   res.json({success:true})
- }catch(e){
-   console.log("Error teachers.js#assignment")
+    // await sendEmail(emails,from,subject,body,html);
+    res.json({
+      success:true
+    })
+    })
+ } catch(e){
+   console.log("Error teachers.js#assignment", e)
    res.status(500).json({
      success:false,
      error: e

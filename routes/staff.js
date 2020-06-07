@@ -6,6 +6,7 @@ var passport = require("passport");
 var sendEmail = require('./helpers/emailHelpers').sendEmail
 var ObjectID = require('mongodb').ObjectID;
 var createCourseFolder = require('./helpers/driveHelpers').createCourseFolder
+var deleteFile = require('./helpers/driveHelpers').deleteFile
 
 const HASH_COST = 10;
 
@@ -67,15 +68,14 @@ router.get('verification/:email/:verificationToken', async (req,res)=>{
 });
 
 router.post('/sendMessages', passport.authenticate('jwt', {session: false}), async (req, res) => {
-    const grades = req.body.grades;
+    const grades = req.body.grades.map(e=>parseInt(e));
     const subject = req.body.subject;
     const body = req.body.body;
-    const email_from = "noreply@school.edu"
 
     //TODO: body and html
     try {
-        const dbData = await req.db.collection("Student").find({grade: grades}).project({email:1, _id:0}).toArray();
-        await sendEmail(dbData,email_from,subject,body,'TODO');
+        const dbData = await req.db.collection("Student").find({grade: {$in:grades}}).project({email:1, _id:0}).toArray();
+        await sendEmail(dbData, email_from, subject, body, 'TODO');
         res.json({
           message:'success'
         })
@@ -91,9 +91,8 @@ router.post('/sendMessages', passport.authenticate('jwt', {session: false}), asy
 });
 
 router.post('/sendMessage', passport.authenticate('jwt', {session: false}), async (req, res) => {
-  email = req.body.emails
-  subject = req.body.subject
-  msg = req.body.msg
+  email = req.body.email
+  msg = req.body.message
   from = 'TODO@todo.todo'
 
   try{
@@ -113,7 +112,7 @@ router.post('/sendMessage', passport.authenticate('jwt', {session: false}), asyn
 });
 
 router.post('/invite/students', passport.authenticate('jwt', {session: false}), async (req,res)=>{
-  emails = req.body.email
+  emails = req.body.emails
   grade = req.body.grade
   const role = "student"
   const emailVerified = false
@@ -148,8 +147,7 @@ router.post('/invite/students', passport.authenticate('jwt', {session: false}), 
 });
 
 router.post('/invite/teachers', passport.authenticate('jwt', {session: false}), async (req,res)=>{
-  emails = req.body.email
-
+  emails = req.body.emails
   const role = "teacher"
   const emailVerified = false
   const approved = true
@@ -268,7 +266,7 @@ router.get('/status/:email', passport.authenticate('jwt', {session: false}), asy
   }
 });
 
-router.post('/approve/student', async (req,res)=>{
+router.post('/approve', async (req,res)=>{
   const approved = req.body.approved
   const email = req.body.email
 
@@ -278,22 +276,37 @@ router.post('/approve/student', async (req,res)=>{
     res.json({success:true})
 
   }catch(e){
-    console.log("Error staff.js#approve/student")
-    res.status(500).json({success:false, error:e})
+    console.log("Error staff.js#approve")
+    res.status(500).json({success:false, error: e})
   }
 });
 
-router.post('/approve/staff', async (req,res)=>{
-  const approve = req.body.approve
-  const email = req.body.email
+router.delete('/student/:emailToDelete', async (req,res)=>{
+  const email = req.params.emailToDelete
 
   try{
-    const dbData = await req.db.collection("User").updateOne({email: email},{$set:{approved:approve}});
+    await req.db.collection("User").remove({email: email});
+    await req.db.collection("Student").remove({email: email});
     //TODO send email to confirm account verification
     res.json({success:true})
 
   }catch(e){
-    console.log("Error staff.js#approve/staff")
+    console.log("Error staff.js#/student/delete", e)
+    res.status(500).json({success:false, error: e})
+  }
+});
+
+router.delete('/teacher/:emailToDelete', async (req,res)=>{
+  const email = req.params.emailToDelete
+
+  try{
+    await req.db.collection("User").remove({email: email});
+    await req.db.collection("Teacher").remove({email: email});
+    //TODO send email to confirm account verification
+    res.json({success:true})
+
+  }catch(e){
+    console.log("Error staff.js#/teacher/delete", e)
     res.status(500).json({success:false, error: e})
   }
 });
@@ -301,25 +314,24 @@ router.post('/approve/staff', async (req,res)=>{
 router.post('/course', async (req,res)=>{ //TODO allow two folders to have same name?, mitigate errors at different levels
   const name = req.body.name
   const teacher = req.body.teacher
-  const grade = req.body.grade
+  const grade = parseInt(req.body.grade)
   const rootFolderId = "1Me9rIsA9i6ifOoRXf17xvpFk3WUQw-Yh" //top level directory for the whole school
-
   try{
 
-    let [_id, webViewLink] = await createCourseFolder(name,rootFolderId )
+    let courseFolder = await createCourseFolder(name,rootFolderId )
     const assignments = []
 
     const courseAdded = await req.db.collection("Course").insertOne({
-        name, grade, teacher, _id, webViewLink, assignments
+        name, grade, teacher, _id: courseFolder.id, webLink: courseFolder.webViewLink, assignments
       });
 
-    await req.db.collection("Teacher").updateOne({_id:ObjectID(teacher)},{$push:{courses:_id}})
-    await req.db.collection("Student").update({grade:grade},{$push:{courses:_id}})
+    await req.db.collection("Teacher").updateOne({_id:ObjectID(teacher)},{$push:{courses:courseFolder.id}})
+    await req.db.collection("Student").update({grade:grade},{$push:{courses:courseFolder.id}})
 
     const teacherEmail = await req.db.collection("Teacher").findOne({_id: ObjectID(teacher)},{email:1})
     await sendEmail(teacherEmail,'noreply@school.edu','You Were Added As Course Teacher','Email Body',teacher)
 
-    res.json({success: true, folder_id:_id, webViewLink:webViewLink})
+    res.json({success: true, folder_id: courseFolder.id, webViewLink: courseFolder.webViewLink})
 
   }catch(e){
     console.log("Error staff.js#post course: "+e)
@@ -333,7 +345,12 @@ router.delete('/course/:id', async (req,res)=>{
   const id = req.params.id
 
   try{
-    await req.db.collection("Course").deleteOne({_id:ObjectID(id)})
+    // TODO: these operations should happen in bulk
+    deleteFile(id)
+    await req.db.collection("Course").deleteOne({_id: id})
+    await req.db.collection("Teacher").updateOne({courses:id},{$pull:{courses:id}})
+    await req.db.collection("Student").update({courses:id},{$pull:{courses:id}})
+
     res.json({success:true})
   }catch(e){
     console.log("Error staff.js#delete course: "+e)
@@ -344,13 +361,49 @@ router.delete('/course/:id', async (req,res)=>{
 
 router.get('/courses', async (req,res)=>{
   try{
-    const courses = await req.db.collection("Course").find({}).toArray()
-    res.json({success:true, courses:courses})
+    let courses = await req.db.collection("Course").find({}).toArray()
+    Promise.all(courses.map( async (course) => {
+        let teacher = await req.db.collection("Teacher").find({courses: { $elemMatch: { $eq: course._id }}}).toArray()
+        let courseWithTeacher = {...course, teacherName: teacher[0].name}
+        return Promise.resolve(courseWithTeacher)
+      })).then((coursesWithTeacher) => {
+        res.json({success:true, courses: coursesWithTeacher})
+      })
   }catch(e){
     console.log("Error staff.js#courses: "+e)
     res.status(500).json({error: e})
   }
 
 });
+
+router.get('/teachers', async (req,res)=>{
+  try{
+    const teachers = await req.db.collection("Teacher").find({}).toArray()
+    res.json({success:true, teachers: teachers})
+  }catch(e){
+    console.log("Error staff.js#teachers: "+e)
+    res.status(500).json({error: e})
+  }
+
+});
+
+router.get('/pending/:role', async (req,res)=>{
+  let role = req.params.role
+  let collection = ''
+  if (role === "teachers") { role = "TEACHER" ; collection = "Teacher" }
+  else if (role === "students") { role = "STUDENT" ; collection = "Student" }
+  //else if (role == "staff") { role = "STAFF" ; collection = "Staff" }
+
+  try{
+    const userData = await req.db.collection("User").find({role:role, approved:false}).project({_id:0,email:1}).toArray()
+    const emails = userData.map(e=>e.email)
+    const roleData = await req.db.collection(collection).find({email: {$in:emails}}).toArray()
+    res.json({data:roleData})
+  }catch(e){
+    console.log(e)
+    res.status(500).json({error:e})
+  }
+
+})
 
 module.exports = router;
